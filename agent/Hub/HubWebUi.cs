@@ -668,7 +668,7 @@ public static class HubWebUi
     async function disU(n,d){const r=await api('user-disable',{method:'POST',body:JSON.stringify({username:n,disabled:d})});if(r&&r.ok){toast('Kész','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
     async function delU(n){if(!await uiConfirm(n+' törlése?'))return;const r=await api('user-delete',{method:'POST',body:JSON.stringify({username:n})});if(r&&r.ok){toast('Törölve','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
     function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-    // JS-sztring kontextushoz (onclick="fn('...')"): előbb JS-escape (\ és '), majd HTML-escape (XSS-védelem).
+    // JS-sztring kontextushoz (onclick-attribútumon belüli, aposztrófos JS-sztring): előbb JS-escape (\ és '), majd HTML-escape (XSS-védelem).
     function jesc(s){return esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
     // Biztonság – kulcsok, telephely-tokenek, műveleti napló: teljes oldalon (WebUi.KeysJs).
     async function rotateKeys(){

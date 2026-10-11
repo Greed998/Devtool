@@ -22,6 +22,7 @@
     <Compile Include="$(A)/Server/WebUi.cs" />
     <Compile Include="$(A)/Server/Users.cs" />
     <Compile Include="$(A)/Hub/*.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
     <Compile Include="Main.cs" />
   </ItemGroup>
   <ItemGroup>

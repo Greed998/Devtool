@@ -225,9 +225,14 @@ h1,h2{margin:0;font-weight:600}
 .stat.err .n{color:var(--err)} .stat.warn .n{color:var(--warn)} .stat.ok .n{color:var(--ok)}
 
 /* --- layout */
-.layout{display:grid;grid-template-columns:minmax(360px,1fr) minmax(400px,1.2fr);
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
   gap:16px;padding:4px 22px 22px;align-items:start}
-@media(max-width:900px){.layout{grid-template-columns:1fr}}
+/* 1.5.12: 1200px alatt (fekvő tablet + oldalsáv) a gépek és az adatlap egymás alá kerül – eddig a két oszlop
+   legkisebb szélessége (360 + 400 px) miatt az oldal vízszintesen kilógott. */
+@media(max-width:1199px){.layout{grid-template-columns:minmax(0,1fr)}}
+/* 1200px alatt a széles táblázat a saját dobozában görget (nem az egész oldal); belül teljes szélességű marad */
+@media(max-width:1199px){.upd-table{display:block;overflow-x:auto;max-width:100%}
+  .upd-table>tbody,.upd-table>thead{display:table;width:100%}}
 /* --- oldalsáv: széles képernyőn a felső sáv bal oldali menüvé válik (keskenyen felül marad) */
 @media(min-width:1000px){
 body:not(.login-body){padding-left:236px}
@@ -315,7 +320,7 @@ body:not(.login-body){padding-left:236px}
 .page-menu button.sel{background:linear-gradient(90deg,rgba(91,140,255,.18),transparent);border-color:var(--line)}
 .page-menu .cnt{color:var(--muted);font-size:12px}
 .page-main{flex:1;overflow:auto;padding:18px 22px}
-@media(max-width:760px){.page-body{flex-direction:column}.page-menu{width:auto;display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+@media(max-width:1199px){.page-body{flex-direction:column}.page-menu{width:auto;display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);flex:none}
   .page-menu button{width:auto;white-space:nowrap}}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
@@ -416,6 +421,74 @@ td.agroup span{float:right}
 .modal input[type=checkbox],.modal input[type=radio]{width:auto;padding:0;margin:0;flex:none;accent-color:var(--accent)}
 .modal label:has(>input[type=checkbox]),.modal label:has(>input[type=radio]){color:var(--ink)}
 .empty{color:var(--muted);text-align:center;padding:40px 20px}
+
+/* =====================================================================================================================
+   1.5.12 – telefon és tablet (a felhasználó kérése). Mérve 390 / 768 / 1024 / 1440 px széles nézetben.
+   - Mindenhol: a fejlécek és gombsorok tördelődnek (a gép-adatlap gombjai asztalin is kilógtak), a széles táblázat
+     a saját dobozában görget, az ablak a mobil böngészősáv mellett is kifér (dvh).
+   - 1000 px alatt: felül tapadó sáv + ☰ lenyíló menü (eddig a menü egyetlen, ~1600 px széles gombsor volt);
+     a teljes oldalas nézetek a sáv alatt nyílnak, így a menü onnan is elérhető.
+   - 760 px alatt (telefon): kisebb margók, a kétoszlopos űrlapok egymás alá, két összesítő csempe soronként.
+   - Érintőképernyőn nagyobb gombok, és 16 px-es mezők (kisebbnél az iOS Safari ráközelít gépeléskor).
+   ===================================================================================================================== */
+.panel-head{flex-wrap:wrap}
+.panel-head h2{min-width:0;overflow-wrap:anywhere}
+/* hosszú, szóköz nélküli szöveg (útvonal, hibaüzenet, URL) se lógjon ki a tartalomból */
+.page-main,.modal,.detail,.stat{overflow-wrap:break-word}
+.detail-actions{flex-wrap:wrap}
+#detailActions{max-width:100%}
+#detailActions .detail-actions{justify-content:flex-end}
+.modal{max-height:calc(100dvh - 32px)}
+.login-card{max-width:100%}
+.toast{max-width:calc(100vw - 24px)}
+.upd-table td,.upd-table th{overflow-wrap:break-word}
+/* az ablak rácssávja összehúzható: így a max-width:100% a képernyőhöz igazodik (telefonon eddig 560px maradt) */
+.modal-back{grid-template-columns:minmax(0,1fr)}
+@media(max-width:999px){
+  .topbar{position:sticky;top:0;z-index:45;height:56px;padding:0 14px}
+  .topbar .brand{flex:1;min-width:0}
+  .navtog{display:block;margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:9px;
+    width:42px;height:38px;cursor:pointer;font-size:18px;line-height:1}
+  .top-actions{display:none}
+  body.nav-open .top-actions{display:flex;position:absolute;left:0;right:0;top:100%;flex-direction:column;align-items:stretch;gap:2px;
+    padding:8px 10px 10px;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.55);
+    max-height:calc(100dvh - 56px);overflow-y:auto}
+  body.nav-open .top-actions .ghost{display:flex;align-items:center;width:100%;text-align:left;padding:12px;background:transparent;
+    border:1px solid transparent;border-radius:9px;font-size:15px}
+  body.nav-open .top-actions .ghost:hover{background:var(--panel2)}
+  .top-actions .user{order:98;padding:10px 12px 4px;border-top:1px solid var(--line);margin-top:4px}
+  .top-actions a.ghost{order:99}
+  .page{top:56px}
+  .panel{scroll-margin-top:66px}
+  :root{--term-off:226px}   /* terminál: a tapadó sáv + a tördelt oldalfejléc is elfér a beviteli sor fölött */
+}
+@media(max-width:760px){
+  .stats{padding:12px 12px 4px;gap:10px}
+  .stat{padding:12px 14px;min-width:calc(50% - 5px)}
+  .stat .n{font-size:22px}
+  .layout{padding:6px 12px 16px;gap:12px}
+  .panel-head{padding:12px 14px}
+  .panel-head>div:not(#detailActions){flex:1 1 100%;min-width:0}
+  #detailActions .detail-actions{justify-content:flex-start}
+  .search{width:auto;flex:1;min-width:0}
+  .agent{padding:12px 14px;gap:10px}
+  .detail{padding:14px}
+  .modal-back{padding:8px}
+  .modal{padding:18px 16px;max-width:100%;max-height:calc(100dvh - 16px)}
+  .modal.wide{width:100%}
+  .page-head{padding:10px 12px}
+  .page-main{padding:14px 12px}
+  .row{flex-direction:column;gap:0}
+  .tiles{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .prow .pid{max-width:120px}
+}
+@media(pointer:coarse){
+  .btn{min-height:38px}
+  .btn.small{min-height:34px;padding:7px 12px}
+  .ghost,.chip{min-height:36px}
+  .agent{min-height:48px}
+  input,select,textarea{font-size:16px !important}
+}
 """;
 
     // ================================================================ JS
@@ -477,7 +550,9 @@ function renderAgents(){
     return `<div class="agroup ${h.closed?'closed':''}" onclick="mgToggle(${esc(JSON.stringify(key))});renderAgents()">${h.html}</div>`+(h.closed?'':l.map(row).join(''));}).join('');
 }
 
-function select(id){selectedId=id;renderAgents();renderDetail()}
+function select(id){selectedId=id;renderAgents();renderDetail();
+  // 1.5.12: egymás alatti elrendezésben (1200px alatt) a kiválasztott gép adatlapjára görgetünk
+  if(window.matchMedia('(max-width:1199px)').matches){const d=document.getElementById('detail');if(d)d.closest('.panel').scrollIntoView({behavior:'smooth',block:'start'});}}
 
 function renderDetail(){
   const a=agents.find(x=>x.agentId===selectedId);
@@ -799,7 +874,7 @@ async function disableUser(n,d){const r=await api('user-disable',{method:'POST',
 async function delUser(n){if(!await uiConfirm(n+' törlése?'))return;const r=await api('user-delete',{method:'POST',body:JSON.stringify({username:n})});
   if(r&&r.ok){toast('Törölve','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-// JS-sztring kontextushoz (pl. onclick="fn('...')"): előbb JS-escape (\ és '), majd HTML-escape. Így az
+// JS-sztring kontextushoz (egy onclick-attribútumon belüli, aposztrófos JS-sztring): előbb JS-escape (\ és '), majd HTML-escape. Így az
 // aposztróf nem tudja kitörni az egyszeres idézőjeles JS-sztringet a HTML-attribútumban (XSS-védelem).
 function jesc(s){return esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))}
 
@@ -882,7 +957,7 @@ async function showTerminal(agentId,machine){_termA=agentId;_termHist=[];const a
   pageOpen(`<div class="page-head"><button class="btn small" onclick="pageClose()">← Vissza</button><h2>Terminál – ${esc(machine)}</h2>
     <span class="sub">PowerShell a gépen, rendszergazdai (LocalSystem) joggal · minden parancs a műveleti naplóba kerül</span>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="termOn" ${on?'checked':''} onchange="termEnable()"> Engedélyezve ezen a gépen</label></div>
-    <div class="page-body"><div class="page-main"><div class="view" style="max-width:1300px;display:flex;flex-direction:column;height:calc(100vh - 150px)">
+    <div class="page-body"><div class="page-main"><div class="view" style="max-width:1300px;display:flex;flex-direction:column;height:calc(100dvh - var(--term-off,150px))">
       <div style="background:rgba(224,165,43,.1);border:1px solid rgba(224,165,43,.35);border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:12px">
         Figyelem: a parancsok teljes rendszergazdai joggal futnak a gépen. A válasz a következő betárcsázáskor jön (nyitott terminálnál kb. 2 mp).</div>
       <div id="termOut" class="mono" style="flex:1;overflow:auto;background:#0a0c10;border:1px solid var(--line);border-radius:9px;padding:12px;font-size:12.5px;white-space:pre-wrap;word-break:break-all"></div>
@@ -1192,7 +1267,13 @@ function openView(html){if(typeof closeModal==='function')closeModal();
   pageOpen(`<div class="page-head"><button class="btn small" onclick="pageClose()">← Vissza</button><h2>${title}</h2><span class="sub"></span></div>
     <div class="page-body"><div class="page-main"><div class="view">${body}</div></div></div>`);}
 // Összecsukható oldalsó menü (széles képernyőn): csak az ikonok maradnak; az állapotot a böngésző megjegyzi.
-function toggleNav(){const on=document.body.classList.toggle('nav-min');try{localStorage.setItem('navMin',on?'1':'0');}catch(e){}}
+// 1.5.12: keskeny képernyőn (<1000px) a ☰ a lenyíló menüt nyitja / zárja; szélesen az oldalsávot csukja össze.
+function narrowNav(){return window.matchMedia('(max-width:999px)').matches;}
+function toggleNav(){if(narrowNav()){document.body.classList.toggle('nav-open');return;}
+  const on=document.body.classList.toggle('nav-min');try{localStorage.setItem('navMin',on?'1':'0');}catch(e){}}
+// A lenyíló menü bezárul menüpont választásakor, és ha mellé kattintanak.
+document.addEventListener('click',e=>{if(!document.body.classList.contains('nav-open'))return;
+  if(e.target.closest('.top-actions .ghost')||!e.target.closest('.topbar'))document.body.classList.remove('nav-open');});
 try{if(localStorage.getItem('navMin')==='1')document.body.classList.add('nav-min');}catch(e){}
 // ---- Monitorozás: bal oldalon kategóriák (Áttekintés, CPU, Memória, Lemez, …), jobbra nagy grafikonok
 let _mp=null;
