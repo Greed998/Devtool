@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- 64 bites, kizarolag -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <AssemblyName>DevToolbox</AssemblyName>
+    <RootNamespace>DevToolbox</RootNamespace>
+
+    <!-- ==========================================================
+         KIADÓ ADATAI
+         A Company értékének SZÓ SZERINT egyeznie kell a kódaláíró
+         tanúsítvány subject nevével, különben a UAC és a fájl
+         tulajdonságai ellentmondanak egymásnak.
+         Ha a tanúsítvány más névre szól, csak ezt az egy sort írd át.
+         ========================================================== -->
+    <Company>Poltoli Informatika</Company>
+    <Authors>Pusztai Csaba e.v. (Poltoli Informatika)</Authors>
+    <Copyright>© 2026 Poltoli Informatika – Pusztai Csaba e.v.</Copyright>
+
+    <Product>DevToolbox</Product>
+    <AssemblyTitle>DevToolbox – IT Admin toolkit</AssemblyTitle>
+    <Description>Szkriptkezelő, hardver- és lemezdiagnosztika, hálózati leltár, eseménynapló-elemzés és licenckulcs-kinyerés. Készítette: Poltoli Informatika (poltoli.hu).</Description>
+
+    <Version>1.5.9</Version>
+    <FileVersion>1.5.9.0</FileVersion>
+    <InformationalVersion>1.5.9 – poltoli.hu</InformationalVersion>
+    <NeutralLanguage>hu-HU</NeutralLanguage>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <DebugType>none</DebugType>
+
+    <!-- A LibreHardwareMonitor a kernel drivert az Assembly.Location melle csomagolja ki.
+         Egyfajlos publikalasnal az Assembly.Location URES, ezert a driver nem tolt be,
+         es nem latszanak a homersekletek. Ezzel a kapcsoloval a futtatokornyezet minden
+         tartalmat kicsomagolja egy ideiglenes mappaba, igy lesz ervenyes Location. -->
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+
+    <!-- Eroforras: talcan huzamosan futo alkalmazas.
+         A nem-egyidejű (non-concurrent) szemetgyujto kisebb memorialabnyomot ad,
+         cserebe hosszabb szunetek arán - egy hatterben figyelo eszkoznel ez jo csere. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="logo.png" LogicalName="DevToolbox.logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A flottakezelő közös protokoll- és kripto-rétege (megosztva az agenttel/szerverrel) -->
+    <Compile Include="../agent/Shared/Crypto.cs" />
+    <Compile Include="../agent/Shared/Protocol.cs" />
+    <Compile Include="../agent/Shared/Security.cs" />
+    <Compile Include="../agent/Server/FleetStore.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="10.0.12" />
+    <PackageReference Include="System.Management" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

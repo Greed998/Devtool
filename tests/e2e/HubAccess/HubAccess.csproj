@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Server/MetricStore.cs" />
+    <Compile Include="$(A)/Shared/ServiceSelfUpdate.cs" />
+    <Compile Include="$(A)/Shared/NativeWin.cs" />
+    <Compile Include="$(A)/Server/Policies.cs" />
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Server/FleetStore.cs" />
+    <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Server/HubClient.cs" />
+    <Compile Include="$(A)/Server/NetWatch.cs" />
+    <Compile Include="$(A)/Server/MachineEvents.cs" />
+    <Compile Include="$(A)/Server/Cve.cs" />
+    <Compile Include="$(A)/Server/SiteOps.cs" />
+    <Compile Include="$(A)/Server/ProgramRequests.cs" />
+    <Compile Include="$(A)/Server/LogShip.cs" />
+    <Compile Include="$(A)/Server/DeviceScore.cs" />
+    <Compile Include="$(A)/Server/Snmp.cs" />
+    <Compile Include="$(A)/Server/SnmpReceiver.cs" />
+    <Compile Include="$(A)/Server/Alerts.cs" />
+    <Compile Include="$(A)/Server/Groups.cs" />
+    <Compile Include="$(A)/Server/ServerTools.cs" />
+    <Compile Include="$(A)/Hub/HubAccess.cs" />
+    <Compile Include="$(A)/Hub/HubAccess.cs" />
+    <Compile Include="T.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+</Project>

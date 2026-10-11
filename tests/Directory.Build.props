@@ -1,0 +1,13 @@
+<Project>
+  <!-- Kozos beallitasok minden tesztprojekthez. $(A) = a termek forrasa (agent\). -->
+  <PropertyGroup>
+    <A>$(MSBuildThisFileDirectory)../agent</A>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CA1416;NU1903;CS8981</NoWarn>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

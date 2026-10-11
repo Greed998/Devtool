@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.2" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Agent/AgentInventory.cs" />
+    <Compile Include="$(A)/Shared/NativeWin.cs" />
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Shared/SetupCheck.cs" />
+    <Compile Include="$(A)/Agent/AgentCore.cs" />
+    <Compile Include="$(A)/Agent/AgentUsb.cs" />
+    <Compile Include="$(A)/Agent/AgentConfig.cs" />
+    <Compile Include="$(A)/Agent/AgentWinget.cs" />
+    <Compile Include="$(A)/Agent/AgentLog.cs" />
+    <Compile Include="$(A)/Agent/AgentMetrics.cs" />
+    <Compile Include="$(A)/Agent/AgentHardware.cs" />
+    <Compile Include="$(A)/Agent/AgentUpdater.cs" />
+    <Compile Include="$(A)/Agent/AgentTrayHost.cs" />
+    <Compile Include="$(A)/Agent/WinUpdates.cs" />
+    <Compile Include="$(A)/Agent/AgentInstaller.cs" />
+    <Compile Include="B6.cs" />
+  </ItemGroup>
+</Project>

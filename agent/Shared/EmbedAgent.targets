@@ -1,0 +1,27 @@
+<Project>
+  <!--
+    Az agent beágyazása a szerverbe: fordításkor a DevToolboxAgent önálló, egyfájlos exe-je
+    elkészül, és EmbeddedResource-ként a szerver exéjébe kerül. Így a telepítőcsomaghoz és az
+    agentek önfrissítéséhez nem kell külön DevToolboxAgent.exe-t a szerver mellé tenni.
+    Kikapcsolás (pl. gyors próbafordításhoz): -p:EmbedAgent=false
+  -->
+  <PropertyGroup>
+    <EmbedAgent Condition="'$(EmbedAgent)' == ''">true</EmbedAgent>
+    <AgentEmbedProject>$(MSBuildThisFileDirectory)../Agent/DevToolboxAgent.csproj</AgentEmbedProject>
+    <AgentEmbedDir>$(MSBuildProjectDirectory)/obj/agent-embed/</AgentEmbedDir>
+  </PropertyGroup>
+
+  <Target Name="PublishEmbeddedAgent" BeforeTargets="BeforeBuild" Condition="'$(EmbedAgent)' == 'true'">
+    <!-- A restore külön kiértékelést kér (egyedi munkamenet-azonosítóval), utána a publish. -->
+    <MSBuild Projects="$(AgentEmbedProject)" Targets="Restore"
+             Properties="Configuration=Release;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+    <MSBuild Projects="$(AgentEmbedProject)" Targets="Publish"
+             Properties="Configuration=Release;PublishDir=$(AgentEmbedDir)" />
+    <Error Condition="!Exists('$(AgentEmbedDir)DevToolboxAgent.exe')"
+           Text="A beágyazandó DevToolboxAgent.exe nem készült el: $(AgentEmbedDir)" />
+  </Target>
+
+  <ItemGroup Condition="'$(EmbedAgent)' == 'true'">
+    <EmbeddedResource Include="$(AgentEmbedDir)DevToolboxAgent.exe" LogicalName="DevToolboxAgent.exe" Visible="false" />
+  </ItemGroup>
+</Project>

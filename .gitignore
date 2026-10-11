@@ -1,0 +1,15 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Published binaries
+*.exe
+*.dll
+*.pdb
+
+# Local certs / secrets
+*.pfx
+*.key

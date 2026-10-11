@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Erősebb kulcs (P-384), láncolt szerverkulcs-csere (60 szem), agent-kulcscsere minden hibaágával, Központ. -->
+  <ItemGroup>
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Server/FleetStore.cs" />
+    <Compile Include="$(A)/Hub/HubStore.cs" />
+    <Compile Include="Test.cs" />
+  </ItemGroup>
+</Project>

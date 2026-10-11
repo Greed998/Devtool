@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 1.5.8: mérési napi fájlok – lezárás, lekérdezés több fájlból, ritkítás, archívum, feltöltésre tartás, törlés. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Server/MetricStore.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Hub/HubStore.cs" />
+    <Compile Include="$(A)/Hub/HubMetricArchive.cs" />
+    <Compile Include="../Cve/Stubs.cs" />
+    <Compile Include="Test.cs" />
+  </ItemGroup>
+</Project>

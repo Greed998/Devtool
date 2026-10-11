@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Server/FleetStore.cs" />
+    <Compile Include="$(A)/Server/Policies.cs" />
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Server/Users.cs" />
+    <Compile Include="$(A)/Server/WebUi.cs" />
+    <Compile Include="$(A)/Hub/HubWebUi.cs" />
+    <Compile Include="R.cs" />
+  </ItemGroup>
+</Project>

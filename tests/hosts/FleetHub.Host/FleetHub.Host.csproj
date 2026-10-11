@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- A valodi Kozpont forraskodja, platformfuggetlen futtatashoz (tesztek). Inditas: <dll> run -->
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Server/WingetSearch.cs" />
+    <Compile Include="$(A)/Server/ServerTools.cs" />
+    <Compile Include="$(A)/Server/AlertLog.cs" />
+    <Compile Include="$(A)/Server/CsvReport.cs" />
+    <Compile Include="$(A)/Server/WingetCatalog.cs" />
+    <Compile Include="$(A)/Server/Alerts.cs" />
+    <Compile Include="$(A)/Server/MetricStore.cs" />
+    <Compile Include="$(A)/Server/EmbeddedAgent.cs" />
+    <Compile Include="$(A)/Server/InstallerGen.cs" />
+    <Compile Include="$(A)/Shared/*.cs" />
+    <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Server/Policies.cs" />
+    <Compile Include="$(A)/Server/FleetStore.cs" />
+    <Compile Include="$(A)/Server/Groups.cs" />
+    <Compile Include="$(A)/Server/Storage.cs" />
+    <Compile Include="$(A)/Server/WebUi.cs" />
+    <Compile Include="$(A)/Server/Users.cs" />
+    <Compile Include="$(A)/Hub/*.cs" />
+    <Compile Include="Main.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+</Project>

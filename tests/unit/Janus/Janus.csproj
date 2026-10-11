@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Janus-küldő (Központ): HMAC-aláírás a Janus api/fleet.php szerint, géplista, riasztás, megszűnés, hibakezelés - helyi kamu Janusszal. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Shared/NativeWin.cs" />
+    <Compile Include="$(A)/Server/Alerts.cs" />
+    <Compile Include="$(A)/Server/MetricStore.cs" />
+    <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Hub/HubStore.cs" />
+    <Compile Include="$(A)/Hub/HubJanus.cs" />
+    <Compile Include="../Notify/Stubs.cs" />
+    <Compile Include="Test.cs" />
+  </ItemGroup>
+</Project>

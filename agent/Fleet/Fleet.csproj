@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    DevToolbox Fleet: EGY exe, két szereppel – telephelyi szerver (FleetServer) és Központ (FleetHub).
+    A szerep a paraméterből, az exe nevéből (a telepítő FleetServer.exe / FleetHub.exe néven másolja be)
+    vagy a varázslóból derül ki. Az agent is benne van (EmbedAgent.targets).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>../Shared/app.manifest</ApplicationManifest>
+    <DefineConstants>$(DefineConstants);GUI_SETUP</DefineConstants>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>Fleet</AssemblyName>
+    <RootNamespace>DevToolbox.Fleet</RootNamespace>
+    <Product>DevToolbox Fleet</Product>
+    <Version>1.5.9</Version>
+    <Company>Poltoli Informatika</Company>
+    <ApplicationIcon>../Server/app.ico</ApplicationIcon>
+    <!-- Onallo: az ugyfelgepeken jellemzoen nincs .NET 10, es enelkul a szolgaltatas
+         el sem indul (1053-as hiba). Nagyobb fajl, de mindenhol fut. -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <NoWarn>CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" />
+    <Compile Include="../Server/*.cs" />
+    <Compile Include="../Hub/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 1.5.9: WireGuard a Server ↔ HUB között – a hivatalos, aláírt wireguard-nt DLL VÁLTOZATLANUL (lásd ThirdParty/wireguard-nt). -->
+    <EmbeddedResource Include="../ThirdParty/wireguard-nt/amd64/wireguard.dll" LogicalName="wireguard.dll" />
+    <EmbeddedResource Include="../ThirdParty/wireguard-nt/LICENSE.txt" LogicalName="wireguard-LICENSE.txt" />
+  </ItemGroup>
+  <Import Project="../Shared/EmbedAgent.targets" />
+</Project>
