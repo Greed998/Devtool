@@ -156,16 +156,16 @@ public sealed class HubClient
         var servicesNow = new Dictionary<string, int>();
         foreach (var a in body.Summary.Agents)
         {
-            var h = string.Concat(a.Installed.Select(i => i.Id + "|" + i.Version + ";")).GetHashCode();
+            var h = InstalledHash(a.Installed);
             installedNow[a.AgentId] = h;
             if (_hubAcceptsMetrics && _installedSent.TryGetValue(a.AgentId, out var prev) && prev == h)
             { a.Installed = new(); a.InstalledOmitted = true; }
             // Driverek / firmware: ugyanígy (null = nem változott; a régi Központ nem ismeri a mezőt, neki mindegy).
-            var ch = a.Components is null ? 0 : string.Concat(a.Components.Select(c => c.Kind + "|" + c.Name + "|" + c.Version + ";")).GetHashCode();
+            var ch = a.Components is null ? 0 : ComponentsHash(a.Components);
             componentsNow[a.AgentId] = ch;
             if (_hubAcceptsMetrics && _componentsSent.TryGetValue(a.AgentId, out var pc) && pc == ch) a.Components = null;
             // 1.5.10: a szolgáltatás-lista is csak változáskor megy fel (null = a régi marad a Központnál).
-            var sh = a.ServiceList is null ? 0 : string.Concat(a.ServiceList.Select(s => s.Name + "|" + (s.Running ? 1 : 0) + "|" + (s.Auto ? 1 : 0) + ";")).GetHashCode();
+            var sh = a.ServiceList is null ? 0 : ServicesHash(a.ServiceList);
             servicesNow[a.AgentId] = sh;
             if (_hubAcceptsMetrics && _servicesSent.TryGetValue(a.AgentId, out var ps) && ps == sh) a.ServiceList = null;
         }
@@ -594,6 +594,33 @@ public sealed class HubClient
             }
             finally { try { File.Delete(gz); } catch { } }
         }
+    }
+
+    // 1.5.11: a változás-detektálás hash-e allokáció nélkül (eddig gépenként egy nagy ideiglenes string épült
+    // csak a GetHashCode miatt). A HashCode folyamatonként véletlen magú – a lenyomatokat csak ugyanabban a
+    // futásban hasonlítjuk össze (újraindításkor és 6 óránként úgyis teljes küldés megy), így ez elég.
+    private static int InstalledHash(List<InstalledApp> l)
+    {
+        var hc = new HashCode();
+        hc.Add(l.Count);
+        foreach (var i in l) { hc.Add(i.Id); hc.Add(i.Version); }
+        return hc.ToHashCode();
+    }
+
+    private static int ComponentsHash(List<ComponentInfo> l)
+    {
+        var hc = new HashCode();
+        hc.Add(l.Count);
+        foreach (var c in l) { hc.Add(c.Kind); hc.Add(c.Name); hc.Add(c.Version); }
+        return hc.ToHashCode();
+    }
+
+    private static int ServicesHash(List<ServiceEntry> l)
+    {
+        var hc = new HashCode();
+        hc.Add(l.Count);
+        foreach (var s in l) { hc.Add(s.Name); hc.Add(s.Running); hc.Add(s.Auto); }
+        return hc.ToHashCode();
     }
 
     /// <summary>Az összegzés hibája ne akassza meg a betárcsázást: akkor egyszerűen nem megy fel.</summary>

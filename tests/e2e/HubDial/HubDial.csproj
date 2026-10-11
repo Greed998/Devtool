@@ -13,6 +13,8 @@
     <Compile Include="$(A)/Shared/Security.cs" />
     <Compile Include="$(A)/Server/FleetStore.cs" />
     <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
+    <Compile Include="$(A)/Server/SiteWg.cs" />
     <Compile Include="$(A)/Server/HubClient.cs" />
     <Compile Include="$(A)/Server/NetWatch.cs" />
     <Compile Include="$(A)/Server/MachineEvents.cs" />
