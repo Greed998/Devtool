@@ -29,7 +29,7 @@ public static class Storage
     /// (a SYSTEM-fiók hálózati mappát nem ér el), nem lehet meghajtó-gyökér, rendszermappa, és nem lehet idegen,
     /// nem üres mappa (a jogait szűkítenénk). Visszaadja a hibát (null = rendben).
     /// </summary>
-    public static string? Validate(string key, string? raw, string dataDir, out string normalized)
+    public static string? Validate(string key, string? raw, string dataDir, out string normalized, string? current = null)
     {
         normalized = "";
         var s = (raw ?? "").Trim().Trim('"').Trim();
@@ -53,6 +53,9 @@ public static class Storage
         if (LogFolder.Same(full, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)) ||
             LogFolder.Same(full, Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)) ?? ""))
             return "Ez a mappa közös rendszermappa – adj meg egy saját almappát benne.";
+        // 1.5.12: a jelenleg is használt mappa (mentéskor) a miénk – azt nem vizsgáljuk „idegen, nem üres" mappaként. Eddig a
+        // változatlanul hagyott mérési-adatbázis-hely is „nem üres" hibát adott, és emiatt a TELJES mentés elbukott.
+        if (current is { Length: > 0 } && LogFolder.Same(full, current)) { normalized = full; return null; }
         if (Directory.Exists(full) && Directory.EnumerateFileSystemEntries(full).Any() && !LooksOurs(full))
             return "A mappa nem üres. Adj meg új vagy üres mappát: a jogait a program a SYSTEM-re és a rendszergazdákra szűkíti.";
         normalized = full;
@@ -68,7 +71,11 @@ public static class Storage
             var dirs = Directory.GetDirectories(dir).Select(Path.GetFileName).ToList();
             bool OurFile(string? f) => f is not null && (LogFolder.Files.Contains(f, StringComparer.OrdinalIgnoreCase)
                 || f.StartsWith("metrics.db", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".merge", StringComparison.OrdinalIgnoreCase));
-            bool OurDir(string? d) => d is not null && Regex.IsMatch(d, @"^\d{8}-\d{6}-");
+            // mentés-almappa; 1.5.8 óta a napi mérési fájlok (metrics-napok) és a Központban a telephelyek fájljai
+            // (metrics-telephelyek) – ezek nélkül a saját mérési mappa induláskor „idegennek" számított, és a szerver
+            // csendben visszaállt az alapértelmezett helyre.
+            bool OurDir(string? d) => d is not null && (DataBackup.IsBackupDir(d)
+                || d.Equals(MetricStore.DaysFolder, StringComparison.OrdinalIgnoreCase) || d.Equals("metrics-telephelyek", StringComparison.OrdinalIgnoreCase));
             return files.All(OurFile) && dirs.All(OurDir);
         }
         catch { return false; }
@@ -203,6 +210,8 @@ public static class Storage
         };
     }
 
+    private static bool SameDir(string a, string b) => a.Length > 0 && b.Length > 0 && LogFolder.Same(a, b);
+
     public sealed class Req { public string? LogDir { get; set; } public string? BackupDir { get; set; } public string? MetricsDir { get; set; } public int? LogMaxMb { get; set; } }
 
     /// <summary>
@@ -211,10 +220,15 @@ public static class Storage
     /// </summary>
     public static string? Save(string dataDir, ServerConfig cfg, MetricStore metrics, Req r, List<string> changes)
     {
-        // Előbb minden útvonal ellenőrzése: hibánál semmi nem változik.
-        if (Validate(Logs, r.LogDir, dataDir, out var logDir) is { } e1) return "Naplók: " + e1;
-        if (Validate(Backup, r.BackupDir, dataDir, out var bakDir) is { } e2) return "Mentések: " + e2;
-        if (Validate(MetricsKey, r.MetricsDir, dataDir, out var metDir) is { } e3) return "Mérési adatbázis: " + e3;
+        // Előbb minden útvonal ellenőrzése: hibánál semmi nem változik. A jelenlegi hely a miénk (nem „idegen" mappa).
+        if (Validate(Logs, r.LogDir, dataDir, out var logDir, LogFolder.Dir(dataDir)) is { } e1) return "Naplók: " + e1;
+        if (Validate(Backup, r.BackupDir, dataDir, out var bakDir, DataBackup.Root(dataDir)) is { } e2) return "Mentések: " + e2;
+        if (Validate(MetricsKey, r.MetricsDir, dataDir, out var metDir, metrics.Dir) is { } e3) return "Mérési adatbázis: " + e3;
+        // 1.5.12: a három hely nem lehet ugyanaz a mappa (a fájlok összekeverednének, és egymás költöztetése / takarítása
+        // a másikét is érintené).
+        if (SameDir(logDir, bakDir)) return "A naplók és a mentések nem lehetnek ugyanabban a mappában – adj meg külön mappát (pl. D:\\Fleet\\Mentesek).";
+        if (SameDir(logDir, metDir)) return "A naplók és a mérési adatbázis nem lehetnek ugyanabban a mappában – adj meg külön mappát.";
+        if (SameDir(bakDir, metDir)) return "A mentések és a mérési adatbázis nem lehetnek ugyanabban a mappában – adj meg külön mappát.";
 
         if (r.LogMaxMb is int mb) { var v = Math.Clamp(mb, 1, 100); if (v != cfg.LogMaxMb) { cfg.LogMaxMb = v; LogLimits.SetMb(v); changes.Add($"naplóméret {v} MB"); } }
 

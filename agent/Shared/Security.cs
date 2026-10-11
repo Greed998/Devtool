@@ -216,6 +216,9 @@ public static class DataBackup
     public static string CustomDir { get; set; } = "";
     public static string Root(string dataDir) => CustomDir.Length > 0 ? CustomDir : Path.Combine(dataDir, "backup");
 
+    /// <summary>Egy mentés-almappa neve: yyyyMMdd-HHmmss-ok (a Create így nevezi el).</summary>
+    public static bool IsBackupDir(string? name) => name is not null && System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d{8}-\d{6}-");
+
     /// <summary>Kulcsok, beallitasok, felhasznalok, szabalyok mentese egy datumozott mappaba. Az utolso 10 marad.</summary>
     public static string? Create(string dataDir, string reason)
     {
@@ -233,7 +236,9 @@ public static class DataBackup
                 foreach (var f in Directory.GetFiles(logs, "*.log"))
                     File.Copy(f, Path.Combine(dest, Path.GetFileName(f)), overwrite: true);
 
-            foreach (var old in Directory.GetDirectories(root).OrderByDescending(d => d).Skip(10))
+            // 1.5.12: csak a mentés-almappák (yyyyMMdd-HHmmss-…) közül törlünk – eddig a mappa MINDEN almappájából,
+            // így ha a mentésmappában más is volt (pl. a mérési adatok napi fájljai), az is törlődhetett.
+            foreach (var old in Directory.GetDirectories(root).Where(d => IsBackupDir(Path.GetFileName(d))).OrderByDescending(d => d).Skip(10))
                 try { Directory.Delete(old, true); } catch { }
             return dest;
         }

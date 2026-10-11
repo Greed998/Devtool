@@ -49,6 +49,25 @@ Chk("A beállításban az új helyek és a naplóméret",cfg.LogDir==newLogs&&cf
 AuditLog.Write(data,"admin","új helyen");
 Chk("Az új napló az új helyre megy",File.ReadAllText(Path.Combine(newLogs,"audit.log")).Contains("új helyen"));
 
+// 1.5.12 – a felhasználó esete: a mérési mappában már ott vannak a napi fájlok (metrics-napok), a helyet nem változtatja,
+// csak a naplóméretet. Eddig: „Mérési adatbázis: A mappa nem üres" – és emiatt SEMMI nem mentődött.
+Console.WriteLine("--- Változatlan hely, a mérési mappában napi fájlokkal ---");
+Directory.CreateDirectory(Path.Combine(newMet,MetricStore.DaysFolder));
+ch.Clear();
+err=Storage.Save(data,cfg,met,new Storage.Req{LogDir=newLogs,BackupDir=newBak,MetricsDir=newMet,LogMaxMb=2},ch);
+Chk("A változatlan (saját) mérési mappa nem „idegen”: a mentés sikerül, a naplóméret 2 MB",err==null&&cfg.LogMaxMb==2&&met.Dir==newMet,err??"");
+var sn=new List<string>();
+Chk("Induláskor is a beállított mérési mappa marad (nem áll vissza csendben az adatmappára)",Storage.MetricsDirAtStartup(data,cfg,sn)==newMet&&sn.Count==0,string.Join(" | ",sn));
+ch.Clear();
+err=Storage.Save(data,cfg,met,new Storage.Req{LogDir=newLogs,BackupDir=newLogs,MetricsDir=newMet},ch);
+Chk("Naplók és mentések ugyanabba a mappába: érthető hiba, semmi nem változik",err!=null&&err.Contains("ugyanabban")&&ch.Count==0&&DataBackup.Root(data)==newBak,err??"");
+// A mentések takarítása csak a mentés-almappákat törölheti (eddig a mappa minden almappáját a legújabb 10 után).
+var keep=Path.Combine(newBak,"nem-mentes-mappa");Directory.CreateDirectory(keep);
+for(int i=0;i<12;i++){var dd=Path.Combine(newBak,$"2020010{i/10}-0000{i%10:D2}-regi");Directory.CreateDirectory(dd);}
+DataBackup.Create(data,"takaritas");
+Chk("Takarítás: legfeljebb 10 mentés marad, a más almappa megmarad",Directory.GetDirectories(newBak).Count(d=>DataBackup.IsBackupDir(Path.GetFileName(d)))==10&&Directory.Exists(keep));
+Directory.Delete(keep);
+
 Console.WriteLine("--- Hibás útnál semmi nem változik ---");
 ch.Clear();
 err=Storage.Save(data,cfg,met,new Storage.Req{LogDir=foreign,BackupDir=newBak,MetricsDir=newMet},ch);
