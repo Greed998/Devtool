@@ -68,10 +68,10 @@ copy /y "out\fleet\Fleet.exe"             "%STAGE%\Fleet.exe"             >nul |
 copy /y "out\agent\DevToolboxAgent.exe"   "%STAGE%\DevToolboxAgent.exe"  >nul || goto :err
 copy /y "out\standalone\DevToolbox.exe"   "%STAGE%\DevToolbox.exe"       >nul || goto :err
 
-rem dokumentumok (ami megvan)
+rem dokumentumok (ami megvan) - ugyanaz, mint a kezi AIO-ban. A README.md szandekosan
+rem nincs benne; ha kell, vedd fel ide egy tovabbi copy sorral.
 if exist "FRISSITES.txt"         copy /y "FRISSITES.txt"         "%STAGE%\" >nul
 if exist "FEJLESZTESI-NAPLO.md"  copy /y "FEJLESZTESI-NAPLO.md"  "%STAGE%\" >nul
-if exist "README.md"             copy /y "README.md"             "%STAGE%\" >nul
 
 rem forras-zip: ha git-repo, a kovetett fajlokbol (tiszta, csak a verziozott forras);
 rem kulonben a munkafabol, a build-szemetet kihagyva.
