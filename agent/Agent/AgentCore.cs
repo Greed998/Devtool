@@ -700,6 +700,31 @@ public sealed class AgentCore
                     break;
                 }
 
+                case AgentTaskKind.ServiceStart:
+                case AgentTaskKind.ServiceStop:
+                case AgentTaskKind.ServiceRestart:
+                {
+                    // 1.5.10: Windows-szolgáltatás kezelése (admin; a szerver aláírt feladatként adja ki). A nevet a
+                    // ServiceController API kapja (NEM parancssor). A szerver is ellenőrzi, itt védelemből újra.
+                    var svc = task.Target.Trim();
+                    if (!ServiceName.IsValid(svc)) { ok = false; exit = -1; sb.AppendLine("Érvénytelen szolgáltatásnév."); break; }
+                    if (!NativeService.Exists(svc)) { ok = false; exit = -1; sb.AppendLine($"Nincs ilyen szolgáltatás: {svc}"); break; }
+                    var wait = TimeSpan.FromSeconds(30);
+                    if (task.Kind is AgentTaskKind.ServiceStop or AgentTaskKind.ServiceRestart)
+                    {
+                        if (!NativeService.Stop(svc, wait)) { ok = false; exit = -1; sb.AppendLine($"A(z) {svc} leállítása nem sikerült (futó függő szolgáltatás vagy időtúllépés). Állapot: {NativeService.StatusText(svc)}"); break; }
+                        sb.AppendLine($"{svc}: leállítva.");
+                    }
+                    if (task.Kind is AgentTaskKind.ServiceStart or AgentTaskKind.ServiceRestart)
+                    {
+                        if (!NativeService.Start(svc, wait)) { ok = false; exit = -1; sb.AppendLine($"A(z) {svc} indítása nem sikerült (időtúllépés vagy hiba). Állapot: {NativeService.StatusText(svc)}"); break; }
+                        sb.AppendLine($"{svc}: elindítva.");
+                    }
+                    ok = true; exit = 0;
+                    sb.AppendLine($"Állapot: {NativeService.StatusText(svc)}");
+                    break;
+                }
+
                 case AgentTaskKind.RunCommand:
                 {
                     // 1.5.9: webes admin terminál. Csak ha a szerver aláírt válaszában engedélyezte erre a gépre; a parancsot

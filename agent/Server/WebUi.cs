@@ -493,6 +493,7 @@ function renderDetail(){
       <button class="btn small" onclick="showMonitor('${a.agentId}','${esc(a.machineName)}')">Monitorozás</button>
       <button class="btn small" onclick="showCve('${a.agentId}')">Sérülékenységek${a.cve&&a.cve.total?` <span class="badge upd" style="${a.cve.exploited||a.cve.critical?'color:var(--err)':''}">${a.cve.total}</span>`:''}</button>
       ${window.ROLE>=1?`<button class="btn small" onclick="showUsb('${a.agentId}')">USB-napló</button>`:''}
+      ${window.ROLE>=1?`<button class="btn small" onclick="showServices('${a.agentId}','${esc(a.machineName)}')">Szolgáltatások…</button>`:''}
       ${window.ROLE>=2?`<button class="btn small ${a.terminal?'primary':''}" onclick="showTerminal('${a.agentId}','${esc(a.machineName)}')">Terminál${a.terminal?'':' (ki)'}</button>`:''}
       <button class="btn small danger" onclick="revoke('${a.agentId}')">Visszavonás</button>
     </div>`;
@@ -1075,6 +1076,45 @@ async function doReboot(){
   const v=document.getElementById('rbDelay').value,now=v==='now';
   if(!await uiConfirm(now?'AZONNALI újraindítás – a felhasználó NEM kap figyelmeztetést, a nem mentett munka elveszhet. Biztos?':'Biztosan újraindítod?'))return;
   task(Object.assign({},window._rbTarget,now?{kind:'rebootnow'}:{kind:'reboot',target:v}),'Újraindítás').then(ok=>{if(ok)closeModal();});
+}
+// 1.5.10: szolgáltatás-kezelő panel. A lista a gép által felküldött szolgáltatásokból (1.5.1-es agenttől); a
+// vezérlés (indít/leállít/újraindít) admin jog (ROLE>=2), a szerver aláírt feladatként adja ki az agentnek.
+async function showServices(id,label){
+  window._svcAgent=id;
+  openModal(`<h3>Szolgáltatások – ${esc(label)}</h3><div id="svcBody" class="muted">Betöltés…</div>`);
+  await loadServices();
+}
+async function loadServices(){
+  const d=await api('machine-services',{method:'POST',body:JSON.stringify({agentId:window._svcAgent})});
+  const body=document.getElementById('svcBody'); if(!body)return;
+  if(!d||!d.ok){body.innerHTML=`<div class="empty">${esc((d&&d.error)||'Nem sikerült')}</div>`;return;}
+  window._svcList=d.services||[];
+  if(!d.reported){body.innerHTML='<div class="empty">A gép még nem küldött szolgáltatáslistát (az 1.5.1-es agent küldi, a következő jelentkezéskor).</div>';return;}
+  const admin=window.ROLE>=2;
+  body.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${window._svcList.length} szolgáltatás · a művelet a gép következő jelentkezésekor fut le (legfeljebb pár perc).${admin?'':' <b>A vezérléshez admin jog kell.</b>'}</div>
+    <input id="svcQ" placeholder="szűrés név szerint…" oninput="svcRender()" autocomplete="off" style="width:100%;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);margin-bottom:8px">
+    <div id="svcRows" style="max-height:52vh;overflow:auto"></div>`;
+  svcRender();
+}
+function svcRender(){
+  const q=((document.getElementById('svcQ')||{}).value||'').trim().toLowerCase();
+  const admin=window.ROLE>=2, list=window._svcList||[];
+  const rows=list.filter(s=>!q||(s.name+' '+(s.displayName||'')).toLowerCase().includes(q)).map(s=>{
+    const dot=s.running?'<span class="badge ok">fut</span>':'<span class="badge">leállt</span>';
+    const ctl=admin?`<span style="display:flex;gap:4px;flex:0 0 auto">
+        <button class="btn small" ${s.running?'disabled':''} onclick="svcDo('${esc(s.name)}','servicestart')">Indít</button>
+        <button class="btn small" ${s.running?'':'disabled'} onclick="svcDo('${esc(s.name)}','servicestop')">Leállít</button>
+        <button class="btn small primary" onclick="svcDo('${esc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)">
+      <div style="min-width:0"><div>${esc(s.displayName||s.name)} ${dot} ${s.auto?'<span class="badge" style="font-size:10px">auto</span>':''}</div>
+      <div class="mono" style="font-size:11px;color:var(--muted)">${esc(s.name)}</div></div>${ctl}</div>`;
+  }).join('')||'<div class="empty">Nincs a szűrőnek megfelelő szolgáltatás.</div>';
+  document.getElementById('svcRows').innerHTML=rows;
+}
+async function svcDo(name,kind){
+  const verb=kind==='servicestart'?'indítása':kind==='servicestop'?'leállítása':'újraindítása';
+  if(kind!=='servicestart' && !await uiConfirm(`A(z) „${name}” szolgáltatás ${verb} – biztos?`))return;
+  await task({agentIds:[window._svcAgent],kind:kind,target:name},`Szolgáltatás ${verb}`);
 }
 // A Csoportok oldal közös (WebUi.GroupsJs); a csoportra kiadható műveletek ezen az oldalon (i: a csoport indexe a _gl-ben).
 function grActions(i){return `<button class="btn small" onclick="task({group:_gl[${i}],kind:'upgradeall'},'Programfrissítés')">Programok</button>

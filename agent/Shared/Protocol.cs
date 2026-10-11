@@ -553,7 +553,7 @@ public static class TrayLogin
 /// <summary>Uj erteket CSAK a vegere szabad felvenni - a regi agentek szam szerint ertelmezik.</summary>
 // Uj tipust CSAK a vegere (regi agentek/telephelyek szam szerint kapjak). Az UpdateAgent a telephelynek szol:
 // nem jut el az agenthez, a telephely a kovetkezo jelentkezeskor felajanlja az agent-frissitest.
-public enum AgentTaskKind { UpgradeApp, UpgradeAll, RunInventory, InstallApp, UninstallApp, WindowsUpdateScan, WindowsUpdateInstall, Reboot, UpdateAgent, RunCommand, RebootNow }
+public enum AgentTaskKind { UpgradeApp, UpgradeAll, RunInventory, InstallApp, UninstallApp, WindowsUpdateScan, WindowsUpdateInstall, Reboot, UpdateAgent, RunCommand, RebootNow, ServiceStart, ServiceStop, ServiceRestart }
 
 /// <summary>
 /// Programazonosito ellenorzese (winget Id vagy ARP-azonosito). A cel a parancssorba
@@ -565,6 +565,18 @@ public static class WingetId
     public static bool IsValid(string? id) =>
         !string.IsNullOrWhiteSpace(id) && id.Length <= 200 && !id.StartsWith('-') &&
         id.All(c => c != '"' && !char.IsControl(c)) && id.Trim() == id;
+}
+
+/// <summary>
+/// Windows-szolgáltatásnév ellenőrzése (indít / leállít / újraindít feladatokhoz). A nevet az agent a
+/// ServiceController API-nak adja át (NEM parancssornak), de a szerver ES az agent is ellenőrzi: a Windows
+/// szolgáltatásneve nem tartalmazhat „/” és „\” karaktert, legfeljebb 256 hosszú, és nincs benne vezérlőkarakter.
+/// </summary>
+public static class ServiceName
+{
+    public static bool IsValid(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && name.Length <= 256 && name.Trim() == name &&
+        name.All(c => c != '/' && c != '\\' && c != '"' && !char.IsControl(c));
 }
 
 public sealed class AgentTask

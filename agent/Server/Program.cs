@@ -1131,6 +1131,25 @@ public static async Task HandleWebApi(HttpListenerContext ctx, FleetStore store,
             });
             return;
 
+        // ---- 1.5.10: egy gép szolgáltatásai a szolgáltatás-kezelő panelhez (név, megjelenítendő név, fut-e, auto)
+        case "/web/api/machine-services":
+        {
+            if (NeedKezelo()) { await WriteJson(ctx, new { ok = false, error = "Ehhez kezelői vagy admin jog kell." }); return; }
+            var r = ProtocolJson.Deserialize<TerminalReq>(body);
+            var a0 = r?.AgentId is { Length: > 0 } ? store.GetAgent(r.AgentId) : null;
+            if (a0 is null) { await WriteJson(ctx, new { ok = false, error = "Nincs ilyen gép." }); return; }
+            var list = a0.LastStatus?.ServiceList;
+            await WriteJson(ctx, new
+            {
+                ok = true,
+                reported = list is not null,
+                services = (list ?? new List<ServiceEntry>())
+                    .OrderBy(s => s.DisplayName.Length > 0 ? s.DisplayName : s.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(s => new { name = s.Name, displayName = s.DisplayName, running = s.Running, auto = s.Auto })
+            });
+            return;
+        }
+
         // ---- metrika-katalógus a szabály-szerkesztőhöz: minden gép mért kulcsai + „bármelyik” minták
         case "/web/api/metric-catalog":
             await WriteJson(ctx, MetricCatalog.Build(Metrics.AllKeys()));
@@ -1573,12 +1592,34 @@ public static async Task HandleWebApi(HttpListenerContext ctx, FleetStore store,
                     if (role < Role.Admin) { await WriteJson(ctx, new { ok = false, error = "Azonnali újraindításhoz admin jog kell." }); return; }
                     tasks.Add(new AgentTask { Kind = AgentTaskKind.RebootNow });
                     break;
+                case "servicestart":   // 1.5.10: Windows-szolgáltatás kezelése (admin)
+                case "servicestop":
+                case "servicerestart":
+                    if (role < Role.Admin) { await WriteJson(ctx, new { ok = false, error = "Szolgáltatás kezeléséhez admin jog kell." }); return; }
+                    if (!ServiceName.IsValid(r.Target)) { await WriteJson(ctx, new { ok = false, error = "Érvénytelen szolgáltatásnév." }); return; }
+                    tasks.Add(new AgentTask
+                    {
+                        Kind = r.Kind == "servicestart" ? AgentTaskKind.ServiceStart
+                             : r.Kind == "servicestop" ? AgentTaskKind.ServiceStop
+                             : AgentTaskKind.ServiceRestart,
+                        Target = r.Target.Trim()
+                    });
+                    break;
                 default: await WriteJson(ctx, new { ok = false, error = "Ismeretlen művelet." }); return;
             }
 
             foreach (var a in targets)
                 foreach (var tk in tasks)
                     store.QueueTask(a.AgentId, new AgentTask { Kind = tk.Kind, Target = tk.Target });
+
+            // 1.5.10: a szolgáltatás-kezelés (admin) a műveleti naplóba kerül.
+            if (r.Kind is "servicestart" or "servicestop" or "servicerestart")
+            {
+                var verb = r.Kind == "servicestart" ? "szolgáltatás indítása"
+                         : r.Kind == "servicestop" ? "szolgáltatás leállítása" : "szolgáltatás újraindítása";
+                var who = targets.Count == 1 ? (targets[0].MachineName ?? targets[0].AgentId) : $"{targets.Count} gép";
+                AuditLog.Write(ServerPaths.DataDir, user, verb, $"{r.Target} – {who}");
+            }
             await WriteJson(ctx, new { ok = true, machines = targets.Count, tasks = tasks.Count });
             return;
         }
