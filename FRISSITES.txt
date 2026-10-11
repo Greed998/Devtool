@@ -1,0 +1,644 @@
+DevToolbox Fleet 1.5.9 – WireGuard-alagút, webes admin terminál, azonnali újraindítás
+=====================================================================================
+Fleet 1.5.9 · Agent 1.5.9 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. Az új agent-funkciók (terminál) az 1.5.9-es agenttel és szerverrel működnek.
+
+ÚJ:
+  - WireGuard-alagút a telephelyi szerver és a Központ között: a telephelyek ezentúl egy
+    titkosított WireGuard-alagúton tárcsáznak be a Központhoz. A WireGuard a Fleet.exe-be
+    van építve (nem kell külön telepíteni). Alapból bekapcsolva.
+      · Központ (Beállítások → WireGuard): UDP-port (alap 51820), címtartomány (alap
+        10.77.0.0/24), a kívülről hívott végpont (pl. fleet.poltoli.hu:51820), telephely-lista.
+        Az UDP-portot a routeren / NGINX Proxy Manager Streams-ben a Központ gépére kell
+        továbbítani.
+      · Telephely (Beállítások → Központ kapcsolat): az alagút állapota, és ha nem áll fel,
+        helyben javítható (végpont felülírása, kulcscsere, újrakapcsolás).
+      · Szigorú mód: amelyik telephely egyszer az alagúton tárcsázott be, utána CSAK azon –
+        a Központ admin felülete az alagútról nem érhető el.
+  - Webes admin terminál (csak admin, gépenként engedélyezve): a gép-panelen a „Terminál”
+    gombbal PowerShell-parancsok futtathatók a gépen, rendszergazdai joggal; a válasz pár
+    másodperc alatt megjön. Alapból KIKAPCSOLVA; a gép-panelen kapcsolható be gépenként.
+    Minden parancs a műveleti naplóba kerül. Figyelem: ez teljes rendszergazdai távoli
+    parancssor – csak ott engedélyezd, ahol kell.
+  - Azonnali újraindítás: az Újraindítás ablakban az „azonnal” lehetőség (figyelmeztetés
+    nélkül, külön megerősítéssel).
+
+JAVULT:
+  - A megabájt-kijelzés (feltöltés, Tárolás, naplóméret) ugyanannyit mutat, mint a Windows
+    fájlkezelője (1 MB = 1024 × 1024 bájt).
+
+============================================================
+
+DevToolbox Fleet 1.5.8 – mérési adatok napi fájlokban, megőrzés a Központból, archívum
+=====================================================================================
+Fleet 1.5.8 · Agent 1.5.8 (az agent kódja nem változott; DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre. A telephely szervere az első
+  induláskor a régi mérési adatbázis napjait napi fájlokba költözteti (10 percenként 7 napot,
+  a háttérben). A Központ beállítása a következő betárcsázáskor megy le a telephelyekre.
+
+ÚJ:
+  - Mérési adatok megőrzése a Központból (Beállítások → Adatmegőrzés):
+      · a telephelyek szerverein: 30 nap (alap) – utána a nap mérései feltöltődnek a
+        Központba, és a szerverről törlődnek, onnantól csak a Központban látszanak;
+      · a Központban olvasható: 90 nap (alap) – a gép grafikonja ezekből is rajzol;
+      · archívum összesen: 180 nap (alap) – a 90 napnál régebbi ZIP-be kerül, utána törlődik.
+  - Csak lezárt nap tölthető fel: a mérések naponta külön fájlba kerülnek, egy nap fájlja
+    48 órával a nap vége után zárul le. A feltöltés aláírt és lenyomattal ellenőrzött; a
+    szerver csak a Központ visszaigazolása után töröl. Egy példány marad: amikor a nap fájlja
+    megérkezik, a Központ saját 5 perces másolata arra a napra törlődik.
+
+JAVÍTVA:
+  - A feltöltésnél (és a naplók méreténél) kijelzett MB ugyanannyi, mint a fájlkezelőben
+    (1 MB = 1024 × 1024 bájt).
+
+============================================================
+
+DevToolbox Fleet 1.5.7 – tálca-ikon a gépeken, programkérések, a telephely szabályai a HUB-ról, központi napló
+==============================================================================================================
+Fleet 1.5.7 · Agent 1.5.7 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. A tálca-ikon az 1.5.7-es agenttel és szerverrel jelenik meg (alapból be van
+  kapcsolva); a Központból szerkeszthető szabályokhoz és a központi naplóhoz a telephely
+  szerverének is 1.5.7-esnek kell lennie.
+
+ÚJ:
+  - Tálca-ikon a gépeken (a Fleet stílusában): a felhasználó egy kattintással telepítheti a
+    jóváhagyott (repóban levő) programokat, más programot indoklással kérhet, és látja a
+    kérései állapotát (értesítést kap, ha jóváhagyták, települt vagy elutasították).
+    „Belépés adminként” (külön menüpont, a Fleet kezelői / admin fiókjával): a jelszó nem
+    megy át a hálón; utána bármely program telepíthető, és a gép kérései eldönthetők.
+    Kikapcsolás: a telephely szerverén Monitorozás → Mit mérjen? → „Tálca-ikon a gépeken”.
+  - Programkérések (új menüpont a szerveren és a Központban): a kért programok jóváhagyása
+    vagy elutasítása (megjegyzéssel); jóváhagyás után a program magától települ.
+  - A telephely saját riasztási szabályai a Központból is szerkeszthetők (Monitorozás →
+    „Telephelyek szabályai”, vagy a telephely adatlapján); a telephely a következő
+    betárcsázáskor átveszi.
+  - Központi napló: a telephelyek műveleti, riasztás-, SNMP- és szervernaplója a Központba is
+    felmegy (a telephely adatlapján „Naplók”, szűrhető). Az USB-napló a telephelyen marad.
+
+============================================================
+
+DevToolbox Fleet 1.5.6 – sérülékenységek (CVE), eszköz-összegzés, szolgáltatás-figyelés 5 mp-enként
+=====================================================================================================
+Fleet 1.5.6 · Agent 1.5.6 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek (ha az automatikus agent-frissítés be van kapcsolva). Az új agent-mérések
+  (szolgáltatás-figyelés, driverek, védelmi állapot) csak az 1.5.6-os szerverrel mennek.
+
+ÚJ:
+  - Sérülékenységek (Központ → Sérülékenységek): a gépek programjai, driverei (NVIDIA, Intel
+    grafika) és BIOS-a (Dell, HP, Lenovo) összevetve az NVD (NIST) adatbázisával, a CISA
+    KEV-listával (ténylegesen kihasznált hibák) és az EPSS-szel (mennyire valószínű a
+    kihasználás). Naponta egyszer fut (alap: hajnali 3-tól), „Ellenőrzés most” gombbal is,
+    haladásjelzővel. Az első kör kulcs nélkül akár fél óra is lehet – ingyenes NVD API-kulcs
+    a Beállítás részben adható meg. Gépenként: CVE, súlyosság, KEV, valószínűség, érintett
+    program és verzió, javított verzió. A telephely szerverén is látszik (gép → Sérülékenységek).
+  - Eszköz-összegzés: 0–100 pont gépenként (Biztonság + Állapot), és hogy mi vont le pontot
+    (frissítések, vírusvédelem, tűzfal, BitLocker, CVE, lemez, SMART, SSD-élettartam …).
+    A szerveren és a Központban is, a gépek listájában pontszám-jelvény.
+  - Szolgáltatás-figyelés 5 másodpercenként (Monitorozás → Mit mérjen? → figyelt
+    szolgáltatások): ha leáll, azonnal riaszt (e-mail, Janus), ha újraindul, a riasztás megszűnik.
+  - Másolás külső (USB) eszközre naplózva – gépenként vagy összesen (USB-napló). Alapból KI
+    (Mit mérjen? → „Másolás külső eszközre”); a dolgozókat tájékoztatni kell (GDPR).
+  - Szabály-szerkesztő: „Gyakori szabályok” egy kattintással (CPU %, bármelyik mag, bármelyik
+    lemez – HDD és SSD –, szabad hely, hőmérséklet, SSD-élettartam, hálózat Mbit/s), és
+    választható mértékegység (Mbit/s / Gbit/s, MB/s, GB / TB).
+  - A frissíthető programok és a Windows Update újrakeresése beállítható időközönként.
+  - Programtár: kevesebb „Egyéb”, a repóban a kategória kézzel is választható.
+
+JAVULT:
+  - A felület neve „Fleet Server” / „Fleet HUB”; a böngésző „… közlendője” ablakai helyett
+    saját megerősítő ablak; haladásjelző a feltöltésnél (MB, sebesség, hátralévő idő) és a
+    hosszabb műveleteknél.
+  - Grafikon: a % 0–100 között, a GB 0-tól a lemez méretéig (nem a legnagyobb érték a plafon).
+  - Lemez-állapot (SMART): lemezenként táblázat, kiemelt élettartammal; grafikon csak az
+    élettartamhoz.
+
+============================================================
+DevToolbox Fleet 1.5.5 – internetfigyelés, SNMP-trap fogadás, biztonságosabb Janus-kapcsolat
+=============================================================================================
+Fleet 1.5.5 · Agent 1.5.5 (az agent kódja nem változott; DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre. Az új figyelések alapból KI vannak
+  kapcsolva – a telephely szerverén kell beállítani őket.
+
+ÚJ:
+  - Internetkapcsolat figyelése (telephely szervere → Riasztások → „Internetkapcsolat
+    figyelése”): add meg a pingelendő IP-címeket sorrendben (pl. 1.1.1.1, 8.8.8.8, 9.9.9.9),
+    és hogy hány percenként (1–60, pl. 5 / 10 / 15). Ha az első cím válaszol, van internet;
+    ha nem, a következőt próbálja. Ha egyik sem válaszol, fél perc múlva még egyszer, és
+    utána riaszt. Látszik, mettől meddig tartottak a kiesések; a Központ a visszatérés után
+    e-mailben is jelzi. „Próba most” gomb: melyik cím válaszol.
+  - SNMP-trap fogadás (új SNMP menüpont; bekapcsolni az admin tudja): v1, v2c és v3 trapek és
+    informok, minden szabványos v3-hitelesítéssel (MD5, SHA-1, SHA-224/256/384/512) és
+    -titkosítással (DES, 3DES, AES-128/192/256, Cisco-féle AES is). Beérkezett trapek
+    részletekkel, riasztást adó trapek (alap: coldStart, warmStart, linkDown – a Központba is
+    felmennek, onnan e-mail és Janus), próba-trap, útmutató az eszközök beállításához.
+    A fogadás csak a belső (vagy a megadott) címekről; a 162-es UDP-portot a Windows „SNMP
+    Trap” szolgáltatása is foglalhatja – ilyenkor a felület ezt kiírja.
+
+JAVÍTVA (biztonság):
+  - Janus-kapcsolat: a Központ nem követ átirányítást, csak TLS 1.2 / 1.3-mal küld, és csak a
+    Janus saját „rendben” válaszát fogadja el (egy proxy vagy bejelentkező oldal nem nyeli el
+    a riasztást). A titok csak a Janus formátumában adható meg, egy Janus-kulcs csak egy
+    telephelynél; a „Próba” jelzi, ha a két gép órája eltér.
+
+============================================================
+
+DevToolbox Fleet 1.5.4 – programtár fejlesztővel és kategóriával, automatikus csoportok, naplók helye
+======================================================================================================
+Fleet 1.5.4 · Agent 1.5.4 (az agent kódja nem változott; DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre. Az első induláskor a naplók
+  (fleet-server.log / fleet-hub.log, audit.log, alerts.log) az adatmappa logs\ almappájába
+  költöznek: C:\ProgramData\DevToolbox-Fleet\logs\ (Központ: ...\DevToolbox-Fleet-Hub\logs\).
+  A gépeken az agent.log a régi helyén marad.
+
+ÚJ:
+  - Programok → Teljes winget-tár (és a többi lista): minden programnál a fejlesztő és a
+    kategória (Irodai, Játék, Pénzügy és könyvelés, Böngésző, Biztonság, Távelérés,
+    Multimédia, Fejlesztői eszköz, Rendszereszköz …). Kategória-gombok darabszámmal; a
+    fejlesztő nevére kattintva csak az ő programjai látszanak.
+  - Az „Új alkalmazáscsomag” ablak áttekinthetőbb: széles, kategóriánként csoportosít,
+    fejlesztővel, „csak a kijelöltek” szűrővel és számlálóval; sötét görgetősáv.
+    A telepítéskor felugró programválasztó is kategóriánként csoportosít.
+  - Automatikus csoportok (szerver és Központ): Szerverek / Kliensek, Windows-verzió
+    (Windows 11, Windows Server 2022 …), Virtuális / Fizikai gépek – magától, a gép adataiból.
+    Szabály, küszöb, kiesés-figyelés és művelet is kiadható rájuk; a Csoportok oldalon
+    kikapcsolható. A gépek listája fölött választható csoportosítás (típus, Windows-verzió,
+    hardver, csoport), a csoportok becsukhatók.
+  - Beállítások → Tárolás (admin): a naplók, a mentések és a mérési adatbázis helye, valamint
+    a naplóméret állítható. Mentéskor minden átköltözik az új helyre (helyi, új vagy üres
+    mappa kell; a jogait a program a SYSTEM-re és a rendszergazdákra szűkíti).
+
+JAVÍTVA:
+  - Programok → Döntésre vár: csak a winget-tárba valóban újonnan került programok kerülnek
+    ide. A korábban tömegesen bekerült (régi helyi winget-lista ↔ CDN eltérés) tételek
+    kikerülnek; amiről 30 napig nem döntesz, döntés nélkül a teljes tárban marad.
+
+============================================================
+
+DevToolbox Fleet 1.5.3 – Janus-kapcsolat, kapcsolat-teszt, azonnali kapcsolódás, frissülések
+=============================================================================================
+Fleet 1.5.3 · Agent 1.5.3 (az agent kódja nem változott; DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre (a telephely szerverén most már
+  „Kapcsolódás most”-tal azonnal betárcsázhat, és a Központ kérése rögtön átmegy).
+
+ÚJ:
+  - Janus-kapcsolat (Központ → Beállítások → Janus-kapcsolat): a telephelyek géplistája és a
+    riasztások a Janusba mennek, a Janus hibajegyet nyit belőlük. A Janusban ügyfelenként:
+    Rendszer → Fleetserver-kapcsolat → „Hozzáférés létrehozása”; a kulcsot és a titkot a
+    Központban a telephelynél add meg, majd „Próba”.
+  - Telephely → Beállítások → Központ kapcsolat: „Kapcsolat tesztelése” (mentés nélkül: elérés,
+    tanúsítvány, ujjlenyomat), „Mentés és kapcsolódás”, „Kapcsolódás most”.
+  - Központ: kérés után a telephely 10 percig 30 mp-enként tárcsáz be (kézzel is bekapcsolható),
+    így a kért frissítés, feladat gyorsan átmegy; látszik a következő betárcsázás ideje.
+  - Látszik, ha valami frissült: „A szerver frissült: … → …”, „Az agent frissült: … → …”
+    (időponttal), illetve hogy egy kért frissítés még vár.
+
+============================================================
+DevToolbox Fleet 1.5.2 – a gép kezelése teljes oldalon (Központ)
+================================================================
+Fleet 1.5.2 · Agent 1.5.2 (az agent kódja nem változott; DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre.
+
+ÚJ:
+  - Központ: a gép „Kezelés” teljes oldalon nyílik, bal oldali menüvel (Áttekintés, programok,
+    Windows Update, telepítés, telepített programok szűrővel, újraindítás) – mint a Programtár.
+    Az Áttekintés jelzi, ha az agent még régi, és innen frissíthető.
+
+============================================================
+DevToolbox Fleet 1.5.1 – szolgáltatás-választó, jelzés a régi agentre
+=====================================================================
+Fleet 1.5.1 · Agent 1.5.1 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek maguktól frissülnek.
+  Az 1.5.0 bővített mérései (SMART-részletek, hardver, ping, biztonság…) CSAK az 1.5.x-es
+  agenttől jönnek – amíg egy gép régi agenttel fut, a Monitorozás oldala ezt jelzi.
+  Ha egy gép nem frissül: a gép adatlapján „Agent frissítése most”.
+
+ÚJ:
+  - Monitorozás → Mit mérjen?: a figyelt szolgáltatások a gépeken meglevő szolgáltatások
+    listájából választhatók (szűrés, csak a futók, hány gépen van) – a Központban is.
+
+============================================================
+DevToolbox Fleet 1.5.0 – monitorozási szabályok, bővített mérés, hardver-érzékelők, csoportok, portok
+=====================================================================================================
+Fleet 1.5.0 · Agent 1.5.0 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS (sorrend):
+  1. Központ: töltsd fel a Fleet.exe-t (Beállítások → Központ frissítése).
+  2. Telephelyek: a Központból („Szerver frissítése”) vagy a szerver webfelületén. A Központ
+     szabályai, mérés-kérése, programtára és csoport-műveletei csak 1.5.0-s telephelyre mennek le.
+  3. Az agentek maguktól frissülnek 1.5.0-ra (bekapcsolt automatikus agent-frissítésnél).
+     Az új mérések az 1.5.0-s agenttől jönnek.
+
+ÚJ:
+  - Monitorozás menüpont (szerveren és a Központban): a küszöb-szabályok saját oldalon –
+    új szabály metrika-választóval, „bármelyik” mintával (pl. bármelyik lemez > 90%), és
+    hatókörrel: minden gép / gépcsoport / egy gép (a Központban telephelyek is). Itt van a
+    „Mit mérjen?” beállítás is. A Riasztások menüben az aktív lista, a kiesés és a napló maradt.
+  - A Központ küszöb-szabályai és mérés-kérése leküldhetők a telephelyekre: ott a helyiek
+    mellett futnak (csak olvashatók), a mérésből azt méri a gép, amit bármelyik kér.
+  - Csoportok oldal: csoport létrehozása, gépek hozzáadása / elvétele, átnevezés, törlés –
+    a Központban telephelyenként is (a módosítás a következő betárcsázáskor megy le).
+  - Portok a webről (Beállítások, admin): az agent-port váltásakor a régi port még figyel,
+    amíg a gépek át nem állnak (aláírt válaszban kapják, és ellenőrzik a szerver kulcsát);
+    a web-port azonnal vált, a böngésző átirányul. Újraindítás nem kell.
+  - Programtár: a Központ a mester – a Központ programjai, csomagjai és elutasítottjai a
+    telephelyen is látszanak (csak olvashatóként, a helyiek mellett), és telepíthetők.
+  - Bővített mérés: CPU-órajel, turbó, lassítás (throttling), C-állapotok, megszakítások;
+    magonkénti terhelés (alapból ki); memória-gyorsítótár, commit, swap; IOPS, lemez-
+    válaszidő; SMART / NVMe (kopás, hibák, üzemóra, hőmérséklet); hálózat Mbps-ben,
+    kihasználtság, hibás / eldobott csomagok, TCP / UDP kapcsolatok; ping (szerver, átjáró,
+    további címek: válaszidő, ingadozás, csomagvesztés); GPU-terhelés; figyelt folyamatok
+    CPU-ja és memóriája; eseménynapló (kritikus, lemezhiba, összeomlás, váratlan leállás,
+    hardverhiba/ECC); biztonság (belépések, sikertelen belépés, zárolás, jelszótörés-
+    gyanú); Hyper-V (VM-ek, ellenőrzőpontok); a legtöbb memóriát / CPU-t használó folyamatok.
+  - Hardver-érzékelők (alapból bekapcsolva): CPU-, GPU-, alaplap-, lemez-hőmérséklet,
+    ventilátorok, fogyasztás (W). A CPU- és alaplap-értékekhez a PawnIO meghajtó kell –
+    az agent wingettel telepíti (kikapcsolható a „Mit mérjen?”-ben).
+
+MEGJEGYZÉS: a Linuxos tételek (load average, syslog, nginx…) és a Proxmox / VMware nem
+  részei: az agent csak Windowson fut.
+
+============================================================
+DevToolbox Fleet 1.4.7 – agent-frissítés javítás, tokenek törlése
+=================================================================
+Fleet 1.4.7 · Agent 1.4.7 · DevToolbox 1.5.9
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek maguktól frissülnek.
+
+JAVÍTVA:
+  - Előfordulhatott, hogy a szerver nem ajánlotta fel az agentek frissítését (ha a beépített
+    agent kicsomagolása egyszer nem sikerült, pl. a vírusirtó miatt). Most újrapróbálja.
+  - A gép adatlapján látszik, ha az agent régebbi a szerverbe építettnél; „Agent frissítése
+    most” gombbal azonnal kérhető. Ha így sem frissül, a gépen a C:\ProgramData\
+    DevToolbox-Agent\agent.log mutatja az okát.
+
+ÚJ:
+  - Biztonság → tokenek: a kiadott tokenek törölhetők (szerveren és a Központban).
+
+============================================================
+DevToolbox Fleet 1.4.6 – minden menüpont külön oldalon, összecsukható menü
+==========================================================================
+Fleet 1.4.6 · Agent 1.4.6 (DevToolbox 1.5.8 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre (a Központból „Szerver frissítése”);
+  az agentek maguktól frissülnek (az agent kódja nem változott, csak a közös verziószám).
+
+ÚJ:
+  - Minden menüpont (Új agent, Csoportok, Szabályok, Riasztások, Jelentések, Beállítások,
+    Felhasználók – a Központban is) külön, teljes oldalon nyílik, mint a Programok.
+    A menü első pontja (Gépek / Telephelyek) visszavisz az áttekintésre.
+  - Az oldalsó menü összecsukható (☰ a menü tetején): csak az ikonok maradnak;
+    a böngésző megjegyzi, melyiket választottad.
+  - Programtár → Teljes winget-tár: amiről már döntöttél (a repóban van vagy elutasítottad),
+    az alapból nem látszik; „az eldöntöttek is” kapcsolóval megjeleníthető.
+
+============================================================
+
+DevToolbox Fleet 1.4.5 – heti automatikus kulcscsere, erősebb kulcsok, kulcslista
+==================================================================================
+Fleet 1.4.5 · Agent 1.4.5 · DevToolbox 1.5.8
+
+FRISSÍTÉS (sorrend):
+  1. Központ: töltsd fel a Fleet.exe-t (Beállítások → Központ frissítése).
+  2. Telephelyek: a Központból („Szerver frissítése”) vagy a szerver webfelületén.
+  3. Az agentek maguktól frissülnek 1.4.5-re, és utána azonnal erősebb kulcsra cserélnek.
+  4. DevToolbox: cseréld le a DevToolbox.exe-t (csak újrafordítás, a felülete nem változott).
+
+ÚJ – AUTOMATIKUS KULCSCSERE (alapból hetente; Biztonság oldalon állítható, 0 = kikapcsolva):
+  - Az agentek hetente új kulcspárt készítenek. A cserét a régi és az új kulcs is aláírja,
+    a szerver aláírva visszaigazolja; amíg az agent az új kulccsal nem jelentkezik, a régi is
+    érvényes – így egy elveszett válasz sem zárhatja ki a gépet.
+  - A szerver (és a Központ) saját kulcsa is hetente magától cserélődik, láncolt átadással:
+    a gépek / telephelyek ellenőrzötten átállnak, nem kell őket újraregisztrálni. A lánc
+    60 kulcsot őriz, így egy évig offline gép is visszatalál. A kézi csere megmaradt.
+  - Erősebb kulcs: ECDSA P-384 / SHA-384 (eddig P-256 / SHA-256). A szerver akkor vált rá, ha
+    már minden agent (a Központ: minden telephely) 1.4.5 – addig P-256-tal cserél, és a
+    Biztonság oldalon látszik, melyik gép tartja vissza.
+
+ÚJ – BIZTONSÁG OLDAL (Biztonság menü, külön oldalon, csak admin):
+  - A szerver (Központ) kulcsa: ujjlenyomat, algoritmus, mikor készült, következő csere,
+    teljes előzmény (melyik kulcs mikor cserélődött le, miért).
+  - Agentek (telephelyek) kulcsai: jelenlegi kulcs, mióta él, megerősítésre vár-e, előzmény.
+  - Kiadott beléptető (telephely-) tokenek: mikor, kinek, lejárat, felhasználás, állapot;
+    az aktív token letiltható.
+  - Műveleti napló.
+
+============================================================
+
+DevToolbox Fleet 1.4.4 – monitorozó oldal, magok, teljes winget-tár a programtárban
+====================================================================================
+Fleet 1.4.4 · Agent 1.4.4 (DevToolbox 1.5.7 változatlan)
+
+FRISSÍTÉS:
+  1. Központ: töltsd fel a Fleet.exe-t (Beállítások → Központ frissítése).
+  2. Telephelyek: a Központból („Szerver frissítése”) vagy a szerver webfelületén
+     (Beállítások → Fleet Server frissítése). Az agentek maguktól frissülnek 1.4.4-re
+     (az új mérések – magok – a frissített agent első jelentkezése után jelennek meg).
+
+JAVÍTVA:
+  - A nagy ablakok (pl. Monitorozás) kilógtak a képernyőből. Az ablak most legfeljebb
+    képernyőnyi, a tartalma görget.
+
+ÚJ – MONITOROZÁS KÜLÖN OLDALON (gép → Monitorozás, szerveren és Központban):
+  - Bal oldalon kategóriák: Áttekintés, CPU, Memória, Lemez, Lemez-I/O, Hálózat, Rendszer…
+  - Áttekintés: csempék (fizikai magok, logikai szálak, processzorok, max. órajel, memória,
+    lemezméret, futásidő és a fő értékek) + a fő grafikonok.
+  - Nagyobb grafikonok minimum / átlag / maximum értékkel; egérrel pontosan leolvasható.
+  - Új mérések az agentben: fizikai magok, processzorok (foglalat), max. órajel, lemezméret.
+
+ÚJ – PROGRAMTÁR = SAJÁT REPÓ A TELJES WINGET-TÁRBÓL (Programok menü, külön oldalon):
+  - Teljes winget-tár: a Microsoft hivatalos winget-forrása (kb. 15 ezer program), naponta
+    automatikusan letöltve; kereshető, onnan veszed fel, ami a repódba kell.
+  - Döntésre vár: a winget-tárba az előző letöltés óta ÚJONNAN került programok – felvétel
+    vagy elutasítás (egyenként, kijelöltekre vagy mindre). Az első letöltés az alap.
+  - Elutasított: amit elutasítottál, nem kerül a repóba és nem kérdezi újra; visszavehető.
+  - Gépeken talált és Alkalmazáscsomagok ugyanitt; minden döntés azonnal mentődik.
+  - A szervernek / Központnak internet kell a letöltéshez (cdn.winget.microsoft.com);
+    ha nincs, a gépen telepített winget forrását használja.
+
+============================================================
+
+DevToolbox Fleet 1.4.3 – kiesés-riasztás, e-mail értesítés, CSV-jelentések
+==========================================================================
+Fleet 1.4.3 · Agent 1.4.3 · DevToolbox 1.5.7
+
+FRISSÍTÉS:
+  1. Központ: töltsd fel a Fleet.exe-t (Beállítások → Központ frissítése).
+  2. Telephelyek: a Központból (telephely nézet → „Szerver frissítése”), vagy a szerver
+     webfelületén (Beállítások → Fleet Server frissítése). Az agentek maguktól frissülnek.
+  3. DevToolbox: cseréld le a DevToolbox.exe-t.
+
+ÚJ – KIESÉS-RIASZTÁS (Riasztások menü, szerveren és Központban):
+  - Riaszt, ha egy gép 15 perce nem jelentkezett (a Központban: ha egy telephely nem
+    tárcsázott be, illetve ha a telephely egy gépe nem jelentkezett). ALAPBÓL BEKAPCSOLT.
+  - A küszöb állítható (0 = ki, legalább 10 perc). Az esténként kikapcsolt gépek kihagyhatók:
+    jelölj ki csoportokat (pl. „Szerverek”), és csak azok gépei riasztanak.
+  - Az „Aktív most” listában és a riasztásnaplóban látszik; amikor a gép újra jelentkezik,
+    a riasztás megszűnik.
+
+ÚJ – E-MAIL ÉRTESÍTÉS (csak a Központ küld; Beállítások → E-mail értesítés, admin):
+  - SMTP-szerver, port, titkosítás (STARTTLS 587 / SSL 465), felhasználó, jelszó, feladó,
+    címzettek; „Mentés és teszt e-mail” gomb.
+  - Levél megy riasztáskor, a riasztás megszűnésekor és kiesésnél; a percen belüli
+    események egy levélbe kerülnek.
+  - A jelszó titkosítva tárolódik, a felületen és a naplóban nem látszik.
+
+ÚJ – JELENTÉSEK (CSV, Excelben megnyitható; Jelentések menü, szerveren és Központban):
+  - Géplista, telepített programok, elérhető frissítések, riasztásnapló,
+    metrika-összesítő (gépenként napi átlag / minimum / maximum, 1–90 nap).
+
+JAVÍTVA:
+  - Központ: a kezelői gombok egy része (gép kezelése, küszöb, csoportos művelet, szabály)
+    nem jelent meg – a felület nem kapta meg a bejelentkezett felhasználó szerepkörét.
+
+DEVTOOLBOX 1.5.7:
+  - Alkalmazás-frissítő → „Távoli gépen (agenttel)”: a gépet a Flotta agentjei közül
+    választod; a frissítést a gép agentje végzi a következő jelentkezéskor (rendszergazdai
+    jogon). A korábbi PowerShell Remoting-os távoli frissítés megszűnt.
+
+============================================================
+
+DevToolbox Fleet 1.4.2 – frissítés a Központból
+===============================================
+Fleet 1.4.2 · Agent 1.4.2 · DevToolbox 1.5.6
+
+FRISSÍTÉS:
+  1. Központ: töltsd fel a Fleet.exe-t (Beállítások → Központ frissítése).
+  2. Telephelyek: az ELSŐ alkalommal mindegyikre egyszer kézzel (a szerver webfelületén:
+     Beállítások → Fleet Server frissítése). Onnantól a Központból frissíthetők.
+
+ÚJ – FRISSÍTÉS A KÖZPONTBÓL (telephely nézet → „Frissítés a Központból”):
+  - „Szerver frissítése” – a telephely a következő betárcsázáskor letölti a Központ verzióját,
+    ellenőrzi (méret, aláírt lenyomat), lecseréli magát; ha nem indul el, visszaáll a régire.
+  - „Agentek automatikus frissítése” – a Központból be- és kikapcsolható.
+  - A gép ablakában „Agent frissítése” – az adott gép a következő jelentkezéskor frissül.
+
+============================================================
+
+DevToolbox Fleet 1.4.1 – közös verzió, agent-cím javítás, Központ beállításai
+=============================================================================
+Fleet 1.4.1 · Agent 1.4.1 · DevToolbox 1.5.5
+
+FRISSÍTÉS: Fleet.exe feltöltése a szerver, illetve a Központ webes frissítőjével; az agentek
+  maguktól frissülnek 1.4.1-re (ettől kezdve a Fleet és az Agent verziója közös).
+
+JAVÍTVA – A SZERVER CSAK A SAJÁT GÉPÉT LÁTTA:
+  Ha a szerver webfelületét magán a szerveren „localhost”-ként nyitottad meg, az „Új agent”
+  csomagba „http://localhost:8443” került – más gépen ez önmagát jelenti, ezért ott az agent
+  nem érte el a szervert. Most a csomagba a szerver belső IP-címe kerül.
+  TEENDŐ: ahol ilyen csomaggal telepítettél agentet, tölts le új csomagot és telepítsd újra
+  (vagy a telepítő ablakában írd át a szerver címét a szerver IP-címére).
+
+ÚJ – KÖZPONT BEÁLLÍTÁSOK:
+  - Adatmegőrzés: hány napig maradjanak a részletes (5 perces) mérések, és meddig az órás
+    átlagok (csak admin).
+  - Naplófájlok legnagyobb mérete (MB) – fölötte a napló .1 végű fájlba forog.
+  - Automatikus frissítési szabályok – a külön „Szabályok” gomb helyett itt.
+
+============================================================
+
+DevToolbox Fleet 1.4.0 – programtár és alkalmazáscsomagok
+==========================================================
+Fleet 1.4.0 · Agent 1.2.3 · DevToolbox 1.5.4
+
+FRISSÍTÉS: Fleet.exe feltöltése a szerver, illetve a Központ webes frissítőjével (1.3.2-től a
+  csere azonnal indul); az agentek maguktól frissülnek 1.2.3-ra.
+
+ÚJ – PROGRAMTÁR ÉS ALKALMAZÁSCSOMAGOK (Programok menü, szerveren és Központban):
+  - Felvétel a gépeken talált programok közül (pipával), vagy keresővel a winget-tárban –
+    azonosítót nem kell fejből tudni. (Kézi azonosító továbbra is megadható.)
+  - Alkalmazáscsomagok: saját, elnevezett programcsoportok (pl. „Irodai alap”, „Könyvelés”).
+  - Telepítésnél: gépre vagy csoportra csomagot vagy egyes programot választasz.
+  - A korábbi „alapcsomag” jelölésekből „Alapcsomag” nevű csomag lett.
+
+JAVÍTVA:
+  - Az agent alapból nem küldte a telepített programokat (rendszerfiókban a winget-lista üres
+    volt) – most a Windows programlistájából (registry) olvassa, minden jelentkezéskor.
+  - Az agent (és a szerver/Központ) grafikus telepítőjében nagyobb képernyő-nagyításnál nem
+    látszottak a gombok – javítva.
+  - A „Mit mérjen az agent” ablak jelölőnégyzetei szétcsúsztak – javítva.
+
+============================================================
+
+DevToolbox Fleet 1.3.2 – biztonságos frissítés
+==============================================
+Fleet 1.3.2 · Agent 1.2.2 (DevToolbox 1.5.3 változatlan)
+
+FRISSÍTÉS: töltsd fel a Fleet.exe-t a szerver, illetve a Központ webes frissítőjével.
+  - Ugyanaz a Fleet.exe megy mindkettőre: a szerver szerverként, a Központ Központként frissül
+    (a szerepet a telepítés helye és neve dönti el).
+  - 1.3.0-tól a csere a feltöltés után azonnal indul; a szolgáltatás pár másodperc múlva
+    újraindul. Ha az új verzió nem indulna el, a régi automatikusan visszaáll.
+  - RÉGI (1.3.0 előtti) szerverről/Központról az első frissítést még a régi program végzi:
+    feltöltés után EGYSZER indítsd újra a szolgáltatást (Szolgáltatások → DevToolbox Fleet
+    Server / Kozpont → Újraindítás) vagy a gépet.
+  - Az agentek maguktól frissülnek a szerverbe épített 1.2.2-re.
+
+JAVÍTVA: sikertelen frissítés után a hibás új exe félreáll (*.hibas.exe), nem próbálkozik
+  újra minden indításkor.
+
+============================================================
+
+DevToolbox Fleet 1.3.1 – optimalizálás
+======================================
+Fleet 1.3.1 · Agent 1.2.1 · DevToolbox 1.5.3
+
+FRISSÍTÉS: mint az 1.3.0-nál (szerverek → Központ; az agentek maguktól frissülnek).
+
+GYORSABB / KEVESEBB ADAT:
+  - Agent: a WMI-kapcsolat megmarad a mérések között (percenkénti mérésnél kevesebb terhelés).
+  - Telephely → Központ: a gépek programlistája csak akkor megy fel, ha változott
+    (6 óránként biztonságból teljes lista) – a betárcsázás töredéke a korábbinak.
+  - FleetServer webfelület: a 15 mp-es frissítés nem küldi a teljes programlistákat;
+    az Eltávolítás ablak kéri le, amikor megnyitod.
+  - DevToolbox: eltávolításkor parancssor (cmd) nélkül törli magát.
+
+============================================================
+
+DevToolbox Fleet 1.3.0 – egy exe, Központ a szerver szintjén, részletes metrikák
+=================================================================================
+Fleet 1.3.0 (FleetServer + FleetHub egy exe-ben) · Agent 1.2.0 · DevToolbox 1.5.2
+
+FRISSÍTÉSI SORREND: telephelyi szerverek → Központ → agentek (az agentek maguktól).
+  1. Telephelyi szerver: a webes frissítővel töltsd fel a Fleet.exe-t (Beállítások →
+     Fleet Server frissítése), vagy rendszergazdaként:  Fleet.exe server install
+     A Fleet.exe a régi helyre FleetServer.exe néven másolja be magát.
+  2. Központ: webes frissítő (Beállítások → Központ frissítése), vagy:  Fleet.exe hub install
+  3. Agentek: NINCS teendő – az agent a szerverbe van építve, a gépek a következő
+     jelentkezéskor maguktól frissülnek 1.2.0-ra. (A szerver mellé tett régi
+     DevToolboxAgent.exe már nem kell; ha újabbat teszel oda, az nyer.)
+
+ÚJ – EGY PROGRAM, KÉT SZEREP:
+  - Fleet.exe dupla kattintásra megkérdezi: telephelyi szerver / Központ / mindkettő.
+    Parancssor: Fleet.exe server <parancs>, Fleet.exe hub <parancs>.
+  - A beépített agentből készül a telepítőcsomag és az agentek önfrissítése.
+
+ÚJ – NINCS HÁTTÉRBEN PARANCSSOR VAGY POWERSHELL:
+  - Szolgáltatás, tűzfal, URL-foglalás, mappajogok, újraindítás: közvetlen Windows-hívások
+    (eddig sc.exe, netsh, icacls, shutdown.exe, PowerShell). Kivétel: a winget.
+  - Frissítéskor az új exe maga cserél, és ha nem indul el, visszaállítja a régit.
+
+ÚJ – RÉSZLETES METRIKÁK:
+  - Az agent percenként mér (a jelentkezéstől függetlenül, a „Mit mérjen?” ablakban
+    15 mp – 1 óra között állítható), és a mintákat időbélyeggel küldi fel.
+  - Új mérések: processzor-várakozási sor, folyamatok, szálak, futásidő, lefoglalt (commit)
+    memória, lapozás, lemez-aktivitás (foglaltság, sor, olvasás, írás), hálózati forgalom
+    adapterenként és összesen.
+  - Megőrzés változatlan elven: részletes minta 7 napig, utána órás átlag 90 napig (állítható).
+
+ÚJ – A KÖZPONT A TELEPHELYEKEN ÁT MINDENT TUD, AMIT A SZERVER:
+  - Gépenként Kezelés: programfrissítés, Windows Update, telepítés (katalógusból is),
+    eltávolítás, újraindítás; telephelyenként csoportos műveletek.
+  - Monitorozás: 5 perces átlagok a telephelyről, grafikonok (6 óra – 90 nap), saját
+    küszöbök, riasztásnapló, állítható megőrzés.
+  - Programkatalógus és alapcsomag; automatikus szabályok telephely- és csoport-hatókörrel
+    (a telephelyen futnak, annak helyi idejében).
+  - Új agent a Központból: a telephely készíti a beléptetőt, a ZIP letölthető.
+  - Szerver: új „diag” parancs (szolgáltatás, portok és foglalójuk, tűzfal, Központ-elérés).
+
+GYORSABB: kevesebb lemezírás (a minták nem kerülnek a fleet.json-ba, késleltetett mentés),
+  winget-lista 30 percenként, gyorsabb metrika-lekérdezések, kisebb Központ-frissítések.
+
+============================================================
+
+DevToolbox Fleet – gépkezelés
+=============================
+FleetServer 1.2.3 · Agent 1.1.3 · Központ 1.1.3 (változatlan) · DevToolbox 1.5.1
+(DevToolbox 1.5.1: újrafordítva a legfrissebb közös kóddal.)
+
+FRISSÍTÉS: a FleetServert töltsd fel a webes frissítővel, az új DevToolboxAgent.exe-t
+tedd a FleetServer.exe mellé – az 1.1.2-es agentek MAGUKTÓL frissülnek.
+
+ÚJ (oldalsáv: Csoportok · Programok · Szabályok; gép részletei):
+  - Programtelepítés és -eltávolítás az agenten át (winget, gépszintű, csendes).
+    Programkatalógus céges ALAPCSOMAGGAL: egy gombbal egy gépre vagy egész csoportra.
+    Eltávolítás a gépen telepített programok listájából (winget és rendszer-telepítésűek).
+  - Windows Update: elérhető frissítések (KB, súlyosság, méret, újraindítást igényel-e),
+    forrás (Microsoft Update / WSUS / Intune – azt használja, amit a gép), függő
+    újraindítás jelzése. Kijelöltek vagy összes telepítése, „Keresés most”.
+    ÚJRAINDÍTÁS SOHA nem automatikus – külön gomb, késleltetéssel, a felhasználó
+    figyelmeztetést kap.
+  - Gépcsoportok (pl. Könyvelés, Szerverek): csoportos programfrissítés, Windows-
+    frissítés, telepítés, újraindítás. A keresőmező csoportnévre is szűr.
+  - Automatikus frissítési szabályok karbantartási ablakkal (napok + óra, éjfélen
+    átnyúló is, pl. 22–04): programok / Windows / újraindítás, csoportra vagy mindre.
+    Egy ablakban egyszer fut; újraindítás csak ha engedélyezed ÉS a gép arra vár.
+    Alapból nincs egyetlen szabály sem.
+  - Minden művelet a műveleti naplóba kerül; Megfigyelő szerepkör nem adhat ki feladatot.
+
+JAVÍTVA: a winget táblázat oszlopai összeolvadtak, ha csak egy szóköz volt köztük –
+  a frissíthető programok „Elérhető” mezőjében emiatt a forrás is megjelenhetett.
+
+============================================================
+
+DevToolbox Fleet – üzemeltetési frissítés
+=========================================
+FleetServer 1.2.2 · Agent 1.1.2 · Központ 1.1.3
+
+FRISSÍTÉSI SORREND: FleetServer → Központ → agentek (mint eddig).
+Ez az UTOLSÓ kézi agent-frissítés: az 1.1.2-es agentek innentől maguktól frissülnek.
+
+ÚJ:
+  - Agent önfrissítés: tedd az új DevToolboxAgent.exe-t a FleetServer.exe mellé –
+    a gépek a következő jelentkezéskor maguktól frissülnek. A szerver ALÁÍRT
+    válaszban küldi a fájl SHA-256 lenyomatát; az agent csak egyező fájlt
+    telepít. Ha az új verzió nem indul el, automatikusan visszaáll a régire.
+    Kikapcsolható: Beállítások → „Agentek automatikus frissítése”.
+  - Grafikus telepítővarázsló mindhárom programhoz (dupla kattintás az exe-re,
+    rendszergazdai jóváhagyást kér):
+      · Agent: a webes „Új agent” ZIP-ből ELŐRE KITÖLTVE nyílik (szerver, token,
+        ujjlenyomat). A „Kapcsolat tesztelése” telepítés előtt ellenőrzi az
+        elérést és a szerver kulcsát. Meglévő agentnél frissít, token nélkül is.
+        Sikeres telepítés után a tokent tartalmazó fájlt törli.
+      · FleetServer / Központ: portok → telepítés → „Webes beállítás megnyitása”.
+    A parancssoros telepítés (install, TELEPIT.cmd) változatlanul működik.
+  - Oldalsávos menü a FleetServer és a Központ webfelületén (keskeny
+    ablakban/telefonon a menü felül marad).
+
+MEGJEGYZÉS: a varázsló miatt az exe-k mérete ~50 MB (Windows Forms beépítve).
+
+============================================================
+
+DevToolbox Fleet – biztonsági frissítés
+=======================================
+FleetServer 1.2.1 · Agent 1.1.1 · Központ 1.1.2
+
+FRISSÍTÉSI SORREND (fontos):
+  1. FleetServer  – webes frissítővel (Beállítások → Fleet Server frissítése),
+                    vagy rendszergazdaként:  FleetServer.exe install
+  2. Központ      – rendszergazdaként:  FleetHub.exe install
+  3. Agentek      – az új DevToolboxAgent.exe-t tedd a FleetServer.exe mellé,
+                    majd gépenként a webes "Új agent" ZIP-pel telepítsd újra
+                    (a regisztráció megmarad).
+  Kulcscserét csak akkor indíts, ha minden frissítve van.
+
+Frissítéskor a kulcsok és adatok NEM vesznek el: induláskor automatikus mentés
+készül (adatmappa\backup\), a régi kulcsfájlok automatikusan átkerülnek az új,
+verziózott kulcstárba – ugyanazzal a kulccsal, újraregisztrálás nélkül.
+
+ÚJ:
+  - Aláírt szerverválasz: az agent csak a szerver aláírásával ellátott, ehhez
+    a kéréshez tartozó feladatot hajt végre. Közbeékelődő nem csempészhet be
+    feladatot. (Régi szerverrel az új agent a feladatokat kihagyja, és jelzi.)
+  - Kulcscsere újraregisztrálás nélkül: Biztonság → Kulcscsere indítása.
+    A régi kulcs aláírja az újat; a gépek és telephelyek ellenőrzik és átállnak.
+    A régi telepítőcsomagok is működnek tovább.
+  - Belépés-korlátozás: 5 hibás próbálkozás után 15 perc zárolás (IP-nként).
+  - Műveleti napló: Biztonság gomb (admin) – ki, mikor, mit csinált. Jelszó
+    nem kerül bele.
+  - "reinstall --clean": csak a TORLES szó beírásával, és előtte mentést készít.
+
+JAVÍTVA:
+  - A Monitorozás, Riasztások felület a FleetServer webfelületén korábban
+    nem működött (a kódja kimaradt) – most böngészőben végigtesztelve.
