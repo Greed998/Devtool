@@ -755,7 +755,10 @@ public sealed class AgentCore
         try
         {
             await _http.PostAsJsonAsync(Url("/api/result"), result, ProtocolJson.Options, token);
-            L($"Feladat kész ({(ok ? "siker" : "hiba")}), eredmény elküldve.");
+            if (ok) L($"Feladat kész ({task.Kind}, siker), eredmény elküldve.");
+            // Hiba esetén a feladat típusa, a kilépési kód (pl. Win32-hibakód) és a kimenet eleje is a naplóba kerül,
+            // hogy a C:\ProgramData\DevToolbox-Agent\agent.log önmagában megmondja az okát (pl. reboot: kód 87).
+            else    L($"Feladat HIBA ({task.Kind}, kód: {exit}): {Trim(sb.ToString().Trim(), 400)}");
         }
         catch (Exception ex) { L("Az eredmény küldése nem sikerült: " + ex.Message); }
     }

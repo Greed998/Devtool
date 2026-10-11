@@ -301,9 +301,14 @@ public static class NativeShutdown
     public static void Restart(int delaySeconds, string message)
     {
         EnablePrivilege("SeShutdownPrivilege");
-        const uint SHUTDOWN_FORCE_OTHERS = 0x1, SHUTDOWN_RESTART = 0x4;
+        // SHUTDOWN_FORCE_SELF KÖTELEZŐ: ha a grace period (delaySeconds) > 0, és a flag nem tartalmazza,
+        // az InitiateShutdownW ERROR_INVALID_PARAMETER (87)-tel elszáll, és a gép sosem indul újra.
+        // (A forrás SYSTEM-ként, a 0-s munkamenetben fut, ezért a "saját munkamenet" kijelentkeztetése
+        //  itt veszteség nélküli.) FORCE_OTHERS: a bejelentkezett felhasználókat is kijelentkezteti.
+        const uint SHUTDOWN_FORCE_OTHERS = 0x1, SHUTDOWN_FORCE_SELF = 0x2, SHUTDOWN_RESTART = 0x4;
+        const uint FLAGS = SHUTDOWN_RESTART | SHUTDOWN_FORCE_OTHERS | SHUTDOWN_FORCE_SELF;
         const uint REASON = 0x80000000 /*tervezett*/ | 0x00040000 /*alkalmazás*/ | 0x1 /*karbantartás*/;
-        var rc = InitiateShutdownW(null, message, (uint)delaySeconds, SHUTDOWN_RESTART | SHUTDOWN_FORCE_OTHERS, REASON);
+        var rc = InitiateShutdownW(null, message, (uint)delaySeconds, FLAGS, REASON);
         if (rc != 0) throw new Win32Exception((int)rc, "újraindítás ütemezése");
     }
 
