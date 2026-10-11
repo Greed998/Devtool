@@ -175,6 +175,8 @@ public static class Ber
     public static (string Type, string Text) Value(byte[] b, BerReader.Tlv t)
     {
         string Cut(string s) => s.Length <= 500 ? s : s[..500] + "…";
+        // 1.5.11: a hexa alakhoz csak az első 249 bájtot alakítjuk át (eddig az egészet, és csak utána vágtuk 500 karakterre).
+        static string Hex(ReadOnlySpan<byte> v) => v.Length <= 249 ? "0x" + Convert.ToHexString(v) : "0x" + Convert.ToHexString(v[..249]) + "…";
         switch (t.Tag)
         {
             case 0x02: return ("Integer", Signed(b, t).ToString());
@@ -183,7 +185,7 @@ public static class Ber
                 var v = b.AsSpan(t.Start, t.Len);
                 if (TryText(v, out var s)) return ("OctetString", Cut(s));
                 if (v.Length == 6) return ("OctetString", string.Join(":", v.ToArray().Select(x => x.ToString("x2"))));
-                return ("OctetString", Cut("0x" + Convert.ToHexString(v)));
+                return ("OctetString", Hex(v));
             }
             case 0x05: return ("Null", "");
             case 0x06: return ("OID", Oid(b, t));
@@ -191,19 +193,22 @@ public static class Ber
             case 0x41: return ("Counter32", Unsigned(b, t).ToString());
             case 0x42: return ("Gauge32", Unsigned(b, t).ToString());
             case 0x43: return ("TimeTicks", Ticks(Unsigned(b, t)));
-            case 0x44: return ("Opaque", Cut("0x" + Convert.ToHexString(b.AsSpan(t.Start, t.Len))));
+            case 0x44: return ("Opaque", Hex(b.AsSpan(t.Start, t.Len)));
             case 0x46: return ("Counter64", Unsigned(b, t).ToString());
             case 0x47: return ("UInteger32", Unsigned(b, t).ToString());
             case 0x80: return ("noSuchObject", "");
             case 0x81: return ("noSuchInstance", "");
             case 0x82: return ("endOfMibView", "");
-            default: return ($"0x{t.Tag:X2}", Cut("0x" + Convert.ToHexString(b.AsSpan(t.Start, Math.Min(t.Len, 200)))));
+            default: return ($"0x{t.Tag:X2}", Hex(b.AsSpan(t.Start, t.Len)));
         }
     }
 
     /// <summary>Időtartam századmásodpercből: „3 nap 04:05:06”.</summary>
     public static string Ticks(ulong cs)
     {
+        // 1.5.11 (fuzzing): a TimeTicks 32 bites, de a csomagban hosszabb is jöhet; a túl nagy értéktől a TimeSpan
+        // OverflowException-t dobott, és emiatt az EGÉSZ trap elveszett. A hibás értéket nyersen mutatjuk.
+        if (cs > uint.MaxValue) return cs.ToString();
         var ts = TimeSpan.FromMilliseconds(cs * 10.0);
         return (ts.Days > 0 ? $"{ts.Days} nap " : "") + $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
     }
@@ -618,16 +623,29 @@ public sealed class SnmpEngine
         return new Result(Build(pdu, source, "v2c", cname, pdu.Type == SnmpPdu.Inform), reply, null);
     }
 
+    private static string KeyOf(SnmpUserKeys u, byte[] engineId) => u.Name + "|" + Convert.ToHexString(engineId);
+
+    /// <summary>
+    /// A lokalizált kulcsok (engineID-nként). 1.5.11: a gyorsítótárba CSAK sikeres hitelesítés után kerül be (Remember) –
+    /// korábban már a HMAC-ellenőrzés előtt, így hitelesítés nélkül, egy kitalált felhasználónévvel és sok véletlen
+    /// engineID-vel a gyorsítótár kiüríthető volt (a legitim kulcsokkal együtt).
+    /// </summary>
     private (byte[] Auth, byte[] Priv) Keys(SnmpUserKeys u, byte[] engineId)
     {
-        var k = u.Name + "|" + Convert.ToHexString(engineId);
-        if (_localized.TryGetValue(k, out var v)) return v;
-        if (_localized.Count > 2000) _localized.Clear();   // sok különböző engineID-vel ne lehessen a memóriát telerakni
-        v = (u.Auth == SnmpAuthProto.None ? Array.Empty<byte>() : Usm.Localize(u.Auth, u.AuthKu, engineId),
-             u.Priv == SnmpPrivProto.None ? Array.Empty<byte>() : Usm.PrivKey(u.Auth, u.Priv, u.PrivKu, engineId));
-        _localized[k] = v;
-        return v;
+        if (_localized.TryGetValue(KeyOf(u, engineId), out var v)) return v;
+        return (u.Auth == SnmpAuthProto.None ? Array.Empty<byte>() : Usm.Localize(u.Auth, u.AuthKu, engineId),
+                u.Priv == SnmpPrivProto.None ? Array.Empty<byte>() : Usm.PrivKey(u.Auth, u.Priv, u.PrivKu, engineId));
     }
+
+    private void Remember(SnmpUserKeys u, byte[] engineId, (byte[] Auth, byte[] Priv) keys)
+    {
+        if (_localized.Count >= 2000) _localized.Clear();   // csak hitelesített küldők kerülnek ide; biztonsági felső korlát
+        _localized[KeyOf(u, engineId)] = keys;
+    }
+
+    /// <summary>Diagnosztika / teszt: a gyorsítótárazott kulcsok és a visszajátszás-tábla mérete.</summary>
+    public int CachedKeyCount => _localized.Count;
+    public int ReplayCount => _replay.Count;
 
     private Result V3(byte[] pkt, BerReader msg, string source)
     {
@@ -689,6 +707,7 @@ public sealed class SnmpEngine
                 Interlocked.Increment(ref WrongDigest);
                 return new Result(null, ours && reportable ? Report(msgId, 0, userB, null, UsmStatsWrongDigests, WrongDigest, 0) : null, $"hibás hitelesítés ({Trim(user)}) – rossz jelszó vagy protokoll?");
             }
+            Remember(u, engineId, keys);   // a HMAC stimmel: a küldő ismeri a kulcsot
             if (ours)
             {
                 // Mi vagyunk a hiteles fél (inform): az időablak ±150 mp. Eltérésnél hitelesített Report a mi időnkkel – a küldő átáll.
@@ -704,7 +723,7 @@ public sealed class SnmpEngine
                 // vizsgáljuk - sok eszköz traphez 0-s engineTime-ot küld.
                 var rk = Convert.ToHexString(engineId) + ":" + msgId + ":" + Convert.ToHexString(authParams);
                 var now = DateTime.UtcNow;
-                if (_replay.Count > 20000) foreach (var old in _replay.Where(x => now - x.Value > TimeSpan.FromMinutes(15)).Select(x => x.Key).ToList()) _replay.TryRemove(old, out _);
+                PruneReplay(now);
                 if (!_replay.TryAdd(rk, now)) { Interlocked.Increment(ref Replayed); return new Result(null, null, "ismételt (visszajátszott) üzenet"); }
             }
         }
@@ -748,6 +767,28 @@ public sealed class SnmpEngine
     }
 
     private static string Trim(string s) => s.Length <= 40 ? s : s[..40] + "…";
+
+    public const int ReplayMax = 20000;
+    private readonly object _replayGate = new();
+    private DateTime _replayPruned = DateTime.MinValue;
+
+    /// <summary>
+    /// A visszajátszás-tábla karbantartása. 1.5.11: korábban ReplayMax fölött MINDEN csomagnál végigpásztázta a táblát, és
+    /// ha minden bejegyzés friss volt, a tábla korlát nélkül nőtt. Most legfeljebb 10 mp-enként takarít; a 15 percnél régebbiek
+    /// mennek, és ha így is túl nagy, a legrégebbiek is (a tábla ReplayMax/2-re csökken).
+    /// </summary>
+    private void PruneReplay(DateTime now)
+    {
+        if (_replay.Count <= ReplayMax || now - _replayPruned < TimeSpan.FromSeconds(10)) return;
+        lock (_replayGate)
+        {
+            if (now - _replayPruned < TimeSpan.FromSeconds(10)) return;
+            _replayPruned = now;
+            foreach (var old in _replay.Where(x => now - x.Value > TimeSpan.FromMinutes(15)).Select(x => x.Key).ToList()) _replay.TryRemove(old, out _);
+            if (_replay.Count > ReplayMax)
+                foreach (var old in _replay.OrderBy(x => x.Value).Take(_replay.Count - ReplayMax / 2).Select(x => x.Key).ToList()) _replay.TryRemove(old, out _);
+        }
+    }
 
     private byte[] Report(long msgId, int flags, byte[] userB, SnmpUserKeys? u, string statOid, long counter, long reqId)
     {

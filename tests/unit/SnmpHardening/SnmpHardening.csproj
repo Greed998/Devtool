@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 1.5.11: SNMP-fogadó hardening + fuzz (Linuxon is fut: DPAPI nélkül). A küldő független: Lextm.SharpSnmpLib (csak teszt). -->
+  <ItemGroup>
+    <PackageReference Include="Lextm.SharpSnmpLib" Version="12.5.7" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(A)/Shared/Crypto.cs" />
+    <Compile Include="$(A)/Shared/Security.cs" />
+    <Compile Include="$(A)/Shared/Protocol.cs" />
+    <Compile Include="$(A)/Shared/HubProtocol.cs" />
+    <Compile Include="$(A)/Shared/NativeWin.cs" />
+    <Compile Include="$(A)/Shared/ServiceSelfUpdate.cs" />
+    <Compile Include="$(A)/Server/ServerConfig.cs" />
+    <Compile Include="$(A)/Server/ServerTools.cs" />
+    <Compile Include="$(A)/Server/Alerts.cs" />
+    <Compile Include="$(A)/Server/Snmp.cs" />
+    <Compile Include="$(A)/Server/SnmpReceiver.cs" />
+    <Compile Include="$(A)/Server/NetWatch.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
+    <Compile Include="$(A)/Hub/HubStore.cs" />
+    <Compile Include="Test.cs" />
+  </ItemGroup>
+</Project>

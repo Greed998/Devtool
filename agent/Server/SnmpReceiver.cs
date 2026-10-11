@@ -35,6 +35,14 @@ public static class SnmpReceiver
     public static SnmpEngine? Engine => _engine;
 
     public const int MaxPacket = 8192, PerSourcePer10s = 200, RecentMax = 1000;
+    /// <summary>
+    /// 1.5.11: globális korlát 10 mp-enként (minden forrás együtt), és a forrás-tábla mérete. Az UDP-forráscím hamisítható,
+    /// a megengedett belső tartományok pedig nagyok: korábban 5000 forrás fölött a tábla TELJESEN törlődött, így hamis
+    /// forrásokkal a forrásonkénti korlát nullázható volt. Most a tábla nem ürül ki: tele állapotban az új forrás csomagja eldobódik.
+    /// </summary>
+    public const int GlobalPer10s = 2000, MaxRateSources = 5000;
+    private static long _gWin = -1, _prunedWin = -1;
+    private static int _gCnt;
 
     /// <summary>A Windows tűzfalszabály kezelése (a teszt kikapcsolja: emelt jogú futtatásnál se hozzon létre szabályt).</summary>
     public static bool ManageFirewall { get; set; } = true;
@@ -125,9 +133,22 @@ public static class SnmpReceiver
                 Stop();
                 try
                 {
-                    var udp = new UdpClient(AddressFamily.InterNetworkV6);
-                    udp.Client.DualMode = true;   // IPv4 és IPv6 egy socketen
-                    udp.Client.Bind(new IPEndPoint(IPAddress.IPv6Any, cfg.SnmpPort));
+                    UdpClient udp;
+                    UdpClient? v6 = null;
+                    try
+                    {
+                        v6 = new UdpClient(AddressFamily.InterNetworkV6);
+                        v6.Client.DualMode = true;   // IPv4 és IPv6 egy socketen
+                        v6.Client.Bind(new IPEndPoint(IPAddress.IPv6Any, cfg.SnmpPort));
+                        udp = v6;
+                    }
+                    catch (SocketException ex)
+                    {
+                        v6?.Dispose();   // a félig megnyitott socket ne maradjon nyitva (foglalt portnál sem)
+                        // 1.5.11: IPv6 nélküli (letiltott) gépen csak IPv4-en figyelünk – korábban így a fogadó el sem indult.
+                        if (ex.SocketErrorCode is not (SocketError.AddressFamilyNotSupported or SocketError.ProtocolNotSupported)) throw;
+                        udp = new UdpClient(new IPEndPoint(IPAddress.Any, cfg.SnmpPort));
+                    }
                     _udp = udp; _port = cfg.SnmpPort;
                     _cts = new CancellationTokenSource();
                     var ct = _cts.Token;
@@ -186,7 +207,20 @@ public static class SnmpReceiver
         lock (Lock)
         {
             var w = Environment.TickCount64 / 10000;
-            if (Rate.Count > 5000) Rate.Clear();
+            // Globális korlát: a hamisított forrásokból jövő áradat se terhelje korlátlanul a CPU-t / naplót / a válaszokat.
+            if (_gWin != w) { _gWin = w; _gCnt = 0; }
+            if (++_gCnt > GlobalPer10s) { Interlocked.Increment(ref RateLimited); return null; }
+            if (!Rate.ContainsKey(key) && Rate.Count >= MaxRateSources)
+            {
+                // Tele: ablakonként egyszer kiürítjük az elavult (nem az aktuális ablakbeli) forrásokat; ha így sincs hely,
+                // az ÚJ forrás csomagja eldobódik – a meglévők számlálója nem nullázódik.
+                if (_prunedWin != w)
+                {
+                    _prunedWin = w;
+                    foreach (var k in Rate.Where(e => e.Value.Window != w).Select(e => e.Key).ToList()) Rate.Remove(k);
+                }
+                if (Rate.Count >= MaxRateSources) { Interlocked.Increment(ref RateLimited); return null; }
+            }
             var (win, cnt) = Rate.TryGetValue(key, out var x) ? x : (w, 0);
             if (win != w) { win = w; cnt = 0; }
             if (++cnt > PerSourcePer10s) { Rate[key] = (win, cnt); Interlocked.Increment(ref RateLimited); return null; }
