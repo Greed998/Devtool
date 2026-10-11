@@ -1,3 +1,27 @@
+DevToolbox Fleet 1.5.12 – telefonon és tableten is használható webfelület
+=========================================================================
+Fleet 1.5.12 · Agent 1.5.12 · DevToolbox 1.5.12 (az agent és a DevToolbox kódja nem változott, csak a
+  közös verziószám)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. Beállítást nem kell módosítani.
+
+JAVULT – webfelület telefonon és tableten (telephely-szerver és Központ):
+  - Telefonon és álló tableten a menü a ☰ gombbal nyíló lenyíló menü lett (eddig egyetlen,
+    a képernyőből messze kilógó gombsor volt). Menüpont választásakor magától bezárul; a teljes
+    oldalas nézetekből (Programtár, Monitorozás, Terminál…) is elérhető.
+  - Fekvő tableten a géplista és a gép adatlapja egymás alá kerül (eddig a két oszlop nem fért
+    el); gépre koppintva az adatlapjára görget.
+  - A gép adatlapjának gombsora tördelődik – asztali gépen is kilógott, ha sok gomb volt.
+  - A teljes oldalas nézetek kategória-menüje (Programtár, gépkezelés a Központban…) tableten is
+    felülre, vízszintes sávba kerül, így több hely jut a tartalomnak.
+  - Széles táblázatok a saját dobozukban görgethetők (nem az egész oldal); a felugró ablakok
+    telefonon is kiférnek; hosszú útvonalak / hibaüzenetek nem lógnak ki.
+  - Telefonon a kétoszlopos űrlapok egymás alá kerülnek; a terminál beviteli sora is látszik.
+  - Érintőképernyőn nagyobb gombok, és a beviteli mezőkbe írva az iPhone nem nagyít rá.
+
+============================================================
+
 DevToolbox Fleet 1.5.11 – biztonsági javítások, SNMP-megerősítés, optimalizálás
 ==============================================================================
 Fleet 1.5.11 · Agent 1.5.11 (DevToolbox 1.5.9 változatlan)

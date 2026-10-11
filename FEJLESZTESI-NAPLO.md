@@ -11,10 +11,10 @@ Minden kiadásnál frissül. Verziózás: kisebb frissítésnél **csak az utols
 
 | Program | Verzió | Szerep | Hol fut |
 |---|---|---|---|
-| **DevToolbox** (asztali) | 1.5.9 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
-| **DevToolboxAgent** | 1.5.11 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
-| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.11 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
-| **Fleet** – Központ szerep (FleetHub) | 1.5.11 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
+| **DevToolbox** (asztali) | 1.5.12 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
+| **DevToolboxAgent** | 1.5.12 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
+| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.12 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
+| **Fleet** – Központ szerep (FleetHub) | 1.5.12 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
 
 Mind önálló, .NET 10-es, 64 bites, egyfájlos exe – a gépre .NET nem kell. **1.3.0-tól a FleetServer és a FleetHub
 egyetlen exe (`Fleet.exe`)**, benne a beépített agenttel; a szerepet telepítéskor választod (szerver / Központ /
@@ -471,6 +471,28 @@ viselkedése http.sys alatt. Ellenőrzés: `DevToolboxAgent.exe diag`, `FleetHub
 ---
 
 ## 5. Verziótörténet
+
+### Fleet 1.5.12 · Agent 1.5.12 · DevToolbox 1.5.12 – webfelület telefonon és tableten (2026-10-11)
+A felhasználó kérése: a webfelület telefonon és tableten is jól jelenjen meg; minden verzió 1.5.12 (az agent és a DevToolbox
+kódja nem változott). A közös `WebUi.Css` a telephely-szerveré és a Központé is, így mindkettő javult.
+- **Mérés:** a tesztszerverekkel (`tests/hosts`) valódi böngészőben (Chromium, fej nélkül) 390 / 768 / 1024 / 1440 px
+  széles nézetben, a szerver 11 és a Központ 10 nézetén (a Központ telephely- és gépkezelő oldalai álnév-adattal, mert az
+  adatfeltöltő e2e Linuxon a DPAPI miatt nem fut). Előtte: telefonon és álló tableten 1603 px széles oldal (a menü egy
+  gombsor volt), fekvő tableten és asztalin kilógó gép-adatlap-gombok; utána: 84 nézetből 0 kilógás, JS-hiba nélkül.
+- **1000 px alatt:** tapadó felső sáv, ☰ lenyíló menü (`body.nav-open`; menüpontra vagy mellé kattintva bezárul – a
+  `toggleNav()` keskeny képernyőn ezt kapcsolja, szélesen továbbra is az oldalsáv összecsukását); a `.page` a sáv alatt.
+- **1200 px alatt:** a `.layout` egy oszlop (eddig `minmax(360px)+minmax(400px)` miatt kilógott), gépválasztáskor görgetés az
+  adatlapra; a `.page-menu` felül, vízszintesen; a `.upd-table` a saját dobozában görget.
+- **Mindenhol:** tördelődő `.panel-head` / `.detail-actions`; az ablak rácssávja `minmax(0,1fr)` (telefonon eddig 560 px
+  maradt), `dvh` a mobil böngészősáv miatt; `overflow-wrap:break-word` a tartalmi részeken (a táblázatcellákra NEM
+  `anywhere` – az betűnként tördelte az oszlopokat, ezt a mérés mutatta ki).
+- **Telefon (760 px alatt):** kisebb margók, két összesítő csempe soronként, kétoszlopos űrlapok egymás alatt.
+- **Érintőképernyő:** nagyobb gombok, 16 px-es mezők (az iOS Safari kisebbnél ráközelít).
+- A terminál magassága a tapadó sávval és a mobil böngészősávval is számol (`100dvh - var(--term-off)`).
+- Teszt-harness: a `FleetHub.Host`-ból is hiányzott a `WireGuard.cs` (1.5.9 óta nem fordult) – pótolva. A
+  `check_scripts.js` egy 1.5.11-es kommentben lévő `onclick="fn(…)"` mintát hiányzó függvénynek vett – a komment átírva.
+- Ismert, nem ehhez tartozó: az `e2e/Management` „Csoportos műveletek" része elavult (az „alapcsomag" jelölés helyett az
+  1.4.0 óta „Alapcsomag" nevű csomag van) – külön javítandó.
 
 ### Fleet 1.5.11 · Agent 1.5.11 – biztonsági audit javításai, SNMP-megerősítés, optimalizálás (2026-10-11)
 A felhasználó kérése: kódszintű biztonsági audit („penetration test" szemlélettel) és optimalizálás; a javítások. Részletek:

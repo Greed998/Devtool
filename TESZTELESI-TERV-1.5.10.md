@@ -80,6 +80,13 @@ Ez időben elhúzódó (napok), de ellenőrizhető:
 - [ ] Nincs dupla adat a feltöltött napra (a Központ saját 5-perces másolata törlődött).
 - [ ] 90 nap után a Központban ZIP-archívum, 180 nap után törlés (alapértékek; gyorsteszthez a Beállítások → Adatmegőrzés értékei átmenetileg csökkenthetők).
 
+### 2.6b Webfelület telefonon / tableten (1.5.12)
+- [ ] Telefonon (pl. iPhone, Android) a szerver és a Központ webfelülete: felül logó + ☰; a ☰ lenyitja a menüt, menüpontra koppintva bezárul.
+- [ ] Nincs vízszintes görgetés az oldalon (csak a széles táblázatok görgethetők a saját dobozukban).
+- [ ] Gépre koppintva az adatlapjára görget; a gombok tördelődnek, mind elérhető (Szolgáltatások…, Terminál, Újraindítás…).
+- [ ] Felugró ablakok (pl. Újraindítás, Szolgáltatások) kiférnek; a Terminál beviteli sora látszik; gépeléskor nem nagyít rá az iPhone.
+- [ ] Tableten (álló és fekvő) a Programtár / gépkezelés kategória-menüje felül, vízszintes sávban.
+
 ### 2.7 Hol nézz naplót
 - Gép (agent): `C:\ProgramData\DevToolbox-Agent\agent.log`
 - Telephely-szerver: `C:\ProgramData\DevToolbox-Fleet\logs\fleet-server.log`, `audit.log`, `alerts.log`
