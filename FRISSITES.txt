@@ -1,3 +1,27 @@
+DevToolbox Fleet 1.5.10 – szolgáltatás-kezelő felület, újraindítás-javítás
+==========================================================================
+Fleet 1.5.10 · Agent 1.5.10 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. A szolgáltatás-kezelés a Központban az 1.5.10-es telephelytől működik (a
+  telephely a betárcsázáskor felküldi a gépek szolgáltatás-listáját).
+
+JAVÍTVA:
+  - Ütemezett újraindítás: eddig a késleltetett (pl. „5 perc múlva”) újraindítás NEM történt
+    meg – a rendszerhívásból (InitiateShutdownW) hiányzott egy kötelező kapcsoló, ezért a
+    Windows érvénytelen paraméterrel elutasította. (Az „azonnali”, késleltetés nélküli
+    újraindítás ezért működött.) Most a késleltetett újraindítás is rendben lefut. A meghiúsult
+    feladatok oka mostantól az agent naplójában (C:\ProgramData\DevToolbox-Agent\agent.log)
+    is látszik (a feladat típusa, a kilépési kód és a kimenet eleje).
+
+ÚJ:
+  - Szolgáltatás-kezelő felület (a terminál helyett): a gép adatlapján a „Szolgáltatások…”
+    gombbal (telephely-szerver), illetve a gép „Szolgáltatások” fülén (Központ) a gép Windows-
+    szolgáltatásai kereshető listában látszanak; adminként egy kattintással Indítás / Leállítás /
+    Újraindítás. A művelet a műveleti naplóba kerül. Megtekintés: kezelői jog; vezérlés: admin.
+
+============================================================
+
 DevToolbox Fleet 1.5.9 – WireGuard-alagút, webes admin terminál, azonnali újraindítás
 =====================================================================================
 Fleet 1.5.9 · Agent 1.5.9 (DevToolbox 1.5.9 változatlan)

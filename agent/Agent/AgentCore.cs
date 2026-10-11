@@ -46,7 +46,7 @@ public sealed class AgentCore
     private int _compSentHash, _compPendingHash;
     private DateTime _lastOfferTry = DateTime.MinValue;
 
-    public const string AgentVersion = "1.5.9";
+    public const string AgentVersion = "1.5.10";
 
     private readonly AgentConfig _config;
     private readonly HttpClient _http;

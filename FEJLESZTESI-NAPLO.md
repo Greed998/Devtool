@@ -12,9 +12,9 @@ Minden kiadásnál frissül. Verziózás: kisebb frissítésnél **csak az utols
 | Program | Verzió | Szerep | Hol fut |
 |---|---|---|---|
 | **DevToolbox** (asztali) | 1.5.9 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
-| **DevToolboxAgent** | 1.5.9 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
-| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.9 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
-| **Fleet** – Központ szerep (FleetHub) | 1.5.9 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
+| **DevToolboxAgent** | 1.5.10 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
+| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.10 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
+| **Fleet** – Központ szerep (FleetHub) | 1.5.10 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
 
 Mind önálló, .NET 10-es, 64 bites, egyfájlos exe – a gépre .NET nem kell. **1.3.0-tól a FleetServer és a FleetHub
 egyetlen exe (`Fleet.exe`)**, benne a beépített agenttel; a szerepet telepítéskor választod (szerver / Központ /
@@ -471,6 +471,25 @@ viselkedése http.sys alatt. Ellenőrzés: `DevToolboxAgent.exe diag`, `FleetHub
 ---
 
 ## 5. Verziótörténet
+
+### Fleet 1.5.10 · Agent 1.5.10 – szolgáltatás-kezelő felület, újraindítás-javítás (2026-10-11)
+A felhasználó kérése és döntései.
+- **Újraindítás-javítás (fő hiba).** Az ütemezett (késleltetett) újraindítás eddig nem történt meg: a `NativeShutdown.Restart`
+  az `InitiateShutdownW`-t `SHUTDOWN_FORCE_SELF` nélkül hívta, és a Win32 API dokumentációja szerint, ha a grace period > 0 és
+  nincs `SHUTDOWN_FORCE_SELF`, a hívás `ERROR_INVALID_PARAMETER (87)`-tel elszáll. Ezért működött csak az azonnali (delay=0)
+  újraindítás. Javítás: `SHUTDOWN_FORCE_SELF` hozzáadva. A feladat-eredmény naplózása bővült: hibánál a feladat típusa, a
+  kilépési kód és a kimenet eleje is az `agent.log`-ba kerül (eddig csak „siker/hiba").
+- **Szolgáltatás-kezelő felület** (a terminál helyett, a korábban tervezett „szolgáltatás-restart UI"). Protokoll: három új
+  feladat-típus (`ServiceStart/Stop/Restart`, a sor végén, hogy a régi agentek ordinálja ne csússzon el) és `ServiceName`
+  validátor. Agent: a meglévő `NativeService.Start/Stop`-ra építve (ServiceController API, nem parancssor). Telephely-szerver:
+  a gép-panelen „Szolgáltatások…" gomb, kereshető lista, adminként Indít/Leállít/Újraindít; `/web/api/machine-services` és a
+  `/web/api/task` admin-kapuval, auditálva. Központ: a `SiteAgent` kiegészült a `ServiceList`-tel (a telephely a betárcsázáskor
+  felküldi, változás-alapú kihagyással, a Components mintájára), a gép-oldalon „Szolgáltatások" fül. Unit teszt: `ServiceControl`.
+- **build.cmd + AIO.** A `build.cmd` mostantól mindhárom exét lefordítja (Fleet, Agent, DevToolbox) és összerakja az
+  `AIO\Dev-<dátum>.zip` csomagot (3 exe + dokumentumok + forras-zip); a verziót a `Fleet.csproj`-ból olvassa.
+- **Teszt-harness javítás.** Az 1.5.9 (WireGuard) óta a `HubStore.cs` a `WgNet` típust használja, de a `HubStore.cs`-t fordító
+  unit tesztek projektfájljába nem került be a `WireGuard.cs` – ezek build-hibával elszálltak. Javítva (8 teszt újra fut).
+- **Audit:** a metrika-átvitel (Server↔HUB) és az admin terminál átnézve – robusztusak, nincs hiba (lásd `TESZTELESI-TERV-1.5.10.md`).
 
 ### Fleet 1.5.9 · Agent 1.5.9 – WireGuard a Server↔HUB között, webes admin terminál, azonnali újraindítás, MB-kijelzés (2026-10-11)
 A felhasználó kérése és döntései.

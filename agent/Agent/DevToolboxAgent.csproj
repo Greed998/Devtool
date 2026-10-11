@@ -12,7 +12,7 @@
     <AssemblyName>DevToolboxAgent</AssemblyName>
     <RootNamespace>DevToolbox.Fleet.Agent</RootNamespace>
     <Product>DevToolbox Agent</Product>
-    <Version>1.5.9</Version>
+    <Version>1.5.10</Version>
     <Company>Poltoli Informatika</Company>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Onallo: az ugyfelgepeken jellemzoen nincs .NET 10, es enelkul a szolgaltatas
