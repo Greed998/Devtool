@@ -26,6 +26,7 @@
     <Compile Include="$(A)/Server/ProgramRequests.cs" />
     <Compile Include="$(A)/Server/TrayApi.cs" />
     <Compile Include="$(A)/Server/LogShip.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
     <Compile Include="$(A)/Hub/HubStore.cs" />
     <Compile Include="$(A)/Hub/HubSiteLogs.cs" />
     <Compile Include="../Cve/Stubs.cs" />

@@ -19,6 +19,7 @@
     <Compile Include="$(A)/Server/Snmp.cs" />
     <Compile Include="$(A)/Server/SnmpReceiver.cs" />
     <Compile Include="$(A)/Server/NetWatch.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
     <Compile Include="$(A)/Hub/HubStore.cs" />
     <Compile Include="Test.cs" />
   </ItemGroup>

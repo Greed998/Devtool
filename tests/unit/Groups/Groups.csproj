@@ -13,6 +13,7 @@
     <Compile Include="$(A)/Server/Groups.cs" />
     <Compile Include="$(A)/Server/Policies.cs" />
     <Compile Include="$(A)/Server/MetricStore.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
     <Compile Include="$(A)/Hub/HubStore.cs" />
     <Compile Include="Test.cs" />
   </ItemGroup>

@@ -6,6 +6,7 @@
     <Compile Include="$(A)/Shared/Protocol.cs" />
     <Compile Include="$(A)/Shared/HubProtocol.cs" />
     <Compile Include="$(A)/Server/FleetStore.cs" />
+    <Compile Include="$(A)/Server/WireGuard.cs" />
     <Compile Include="$(A)/Hub/HubStore.cs" />
     <Compile Include="Test.cs" />
   </ItemGroup>
