@@ -256,9 +256,9 @@ public static class HubWebUi
       const rows=list.map(s=>{
         const dot=s.running?'<span class="badge ok">fut</span>':'<span class="badge">leállt</span>';
         const ctl=admin?`<span style="display:flex;gap:4px;justify-content:flex-end">
-          <button class="btn small" ${s.running?'disabled':''} onclick="svcDoHub('${esc(s.name)}','servicestart')">Indít</button>
-          <button class="btn small" ${s.running?'':'disabled'} onclick="svcDoHub('${esc(s.name)}','servicestop')">Leállít</button>
-          <button class="btn small primary" onclick="svcDoHub('${esc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
+          <button class="btn small" ${s.running?'disabled':''} onclick="svcDoHub('${jesc(s.name)}','servicestart')">Indít</button>
+          <button class="btn small" ${s.running?'':'disabled'} onclick="svcDoHub('${jesc(s.name)}','servicestop')">Leállít</button>
+          <button class="btn small primary" onclick="svcDoHub('${jesc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
         return `<tr class="svcrow" data-n="${esc((s.name+' '+(s.displayName||'')).toLowerCase())}">
           <td>${esc(s.displayName||s.name)} ${dot} ${s.auto?'<span class="badge" style="font-size:10px">auto</span>':''}<div class="ver-old mono" style="font-size:11px">${esc(s.name)}</div></td>
           <td style="text-align:right">${ctl}</td></tr>`;}).join('');
@@ -649,16 +649,16 @@ public static class HubWebUi
         <label style="display:flex;align-items:center;gap:8px;margin:8px 0"><input type="checkbox" id="scAll" ${allSites?'checked':''} onchange="document.getElementById('scList').style.display=this.checked?'none':'block'"> Minden telephely</label>
         <div id="scList" style="display:${allSites?'none':'block'};max-height:160px;overflow:auto">
         ${_allSites.map(s=>`<label style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" class="scItem" value="${esc(s.id)}" ${(scope||[]).includes(s.id)?'checked':''}> ${esc(s.name)}</label>`).join('')}</div>
-        <button class="btn small" style="margin-top:8px" onclick="setScope('${esc(n)}')">Hatókör mentése</button></div>` : '';
+        <button class="btn small" style="margin-top:8px" onclick="setScope('${jesc(n)}')">Hatókör mentése</button></div>` : '';
       openModal(`<h3>${esc(n)}</h3><label>Szerepkör</label>
       <select id="er" style="width:100%;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink)">
       <option value="0"${role==0?' selected':''}>Megfigyelő</option><option value="1"${role==1?' selected':''}>Kezelő</option><option value="2"${role==2?' selected':''}>Adminisztrátor</option></select>
-      <button class="btn small" style="margin-top:10px" onclick="setRole('${esc(n)}')">Szerepkör mentése</button>
+      <button class="btn small" style="margin-top:10px" onclick="setRole('${jesc(n)}')">Szerepkör mentése</button>
       <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px"><label>Új jelszó</label><input id="ep" type="password">
-      <button class="btn small" style="margin-top:10px" onclick="setPw('${esc(n)}')">Jelszó mentése</button></div>
+      <button class="btn small" style="margin-top:10px" onclick="setPw('${jesc(n)}')">Jelszó mentése</button></div>
       <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;gap:8px">
-      <button class="btn small" onclick="disU('${esc(n)}',${!dis})">${dis?'Engedélyezés':'Letiltás'}</button>
-      <button class="btn small danger" onclick="delU('${esc(n)}')">Törlés</button></div>${sc}`);}
+      <button class="btn small" onclick="disU('${jesc(n)}',${!dis})">${dis?'Engedélyezés':'Letiltás'}</button>
+      <button class="btn small danger" onclick="delU('${jesc(n)}')">Törlés</button></div>${sc}`);}
     async function setScope(n){const all=document.getElementById('scAll').checked;
       const scope=all?[]:[...document.querySelectorAll('.scItem:checked')].map(c=>c.value);
       const r=await api('user-scope',{method:'POST',body:JSON.stringify({username:n,siteScope:scope})});
@@ -667,7 +667,9 @@ public static class HubWebUi
     async function setPw(n){const r=await api('user-password',{method:'POST',body:JSON.stringify({username:n,password:document.getElementById('ep').value})});if(r&&r.ok)toast('Jelszó módosítva','ok');else toast((r&&r.error)||'Hiba','err');}
     async function disU(n,d){const r=await api('user-disable',{method:'POST',body:JSON.stringify({username:n,disabled:d})});if(r&&r.ok){toast('Kész','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
     async function delU(n){if(!await uiConfirm(n+' törlése?'))return;const r=await api('user-delete',{method:'POST',body:JSON.stringify({username:n})});if(r&&r.ok){toast('Törölve','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
-    function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+    function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    // JS-sztring kontextushoz (onclick="fn('...')"): előbb JS-escape (\ és '), majd HTML-escape (XSS-védelem).
+    function jesc(s){return esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
     // Biztonság – kulcsok, telephely-tokenek, műveleti napló: teljes oldalon (WebUi.KeysJs).
     async function rotateKeys(){
       if(!await uiConfirm('Biztosan cseréled most a Központ kulcsát? A telephelyek a következő betárcsázáskor ellenőrzötten átállnak (előtte mentés készül).'))return;

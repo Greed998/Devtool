@@ -564,6 +564,9 @@ public static class WingetId
 {
     public static bool IsValid(string? id) =>
         !string.IsNullOrWhiteSpace(id) && id.Length <= 200 && !id.StartsWith('-') &&
+        // A ZÁRÓ backslash tiltott: "id\" → a Windows argumentum-feldolgozójában a \" eszkébelt idézőjel,
+        // amivel winget-kapcsoló injektálható. Belső backslash szabad (az ARP-azonosítók tartalmazzák, pl. ARP\Machine\X86\…).
+        !id.EndsWith('\\') &&
         id.All(c => c != '"' && !char.IsControl(c)) && id.Trim() == id;
 }
 

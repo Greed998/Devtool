@@ -32,4 +32,12 @@ var back=ProtocolJson.Deserialize<AgentTask>(ProtocolJson.Serialize(t))!;
 Chk("Kind túléli a szerializációt", back.Kind==AgentTaskKind.ServiceRestart);
 Chk("Target túléli a szerializációt", back.Target=="Spooler");
 
+// Biztonsági hardening (1.5.10): a WingetId ne engedjen backslash-t (argumentum-injekció a winget felé).
+Console.WriteLine("--- WingetId: ZÁRÓ backslash tiltás (belső szabad az ARP miatt) ---");
+Chk("Normál azonosító jó", WingetId.IsValid("Microsoft.PowerShell"));
+Chk("ARP-azonosító belső backslash-sel JÓ", WingetId.IsValid(@"ARP\Machine\X86\HPSA"));
+Chk("Záró backslash NEM jó (injekció)", !WingetId.IsValid(@"App\"));
+Chk("Idézőjel NEM jó", !WingetId.IsValid("App\""));
+Chk("Kezdő kötőjel NEM jó", !WingetId.IsValid("--evil"));
+
 Console.WriteLine("\n"+(fail==0?"MINDEN TESZT ATMENT":$"{fail} BUKOTT"));return fail;

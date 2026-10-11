@@ -490,11 +490,11 @@ function renderDetail(){
   actions.innerHTML=a.revoked?'':`
     <div class="detail-actions">
       ${window.ROLE>=1?'<button class="btn small primary" onclick="updateSelected()">Kijelöltek frissítése</button><button class="btn small" onclick="updateAll()">Összes</button>':'<span style="color:var(--muted);font-size:12px">Csak megtekintés – frissítéshez kezelői jog kell.</span>'}
-      <button class="btn small" onclick="showMonitor('${a.agentId}','${esc(a.machineName)}')">Monitorozás</button>
+      <button class="btn small" onclick="showMonitor('${a.agentId}','${jesc(a.machineName)}')">Monitorozás</button>
       <button class="btn small" onclick="showCve('${a.agentId}')">Sérülékenységek${a.cve&&a.cve.total?` <span class="badge upd" style="${a.cve.exploited||a.cve.critical?'color:var(--err)':''}">${a.cve.total}</span>`:''}</button>
       ${window.ROLE>=1?`<button class="btn small" onclick="showUsb('${a.agentId}')">USB-napló</button>`:''}
-      ${window.ROLE>=1?`<button class="btn small" onclick="showServices('${a.agentId}','${esc(a.machineName)}')">Szolgáltatások…</button>`:''}
-      ${window.ROLE>=2?`<button class="btn small ${a.terminal?'primary':''}" onclick="showTerminal('${a.agentId}','${esc(a.machineName)}')">Terminál${a.terminal?'':' (ki)'}</button>`:''}
+      ${window.ROLE>=1?`<button class="btn small" onclick="showServices('${a.agentId}','${jesc(a.machineName)}')">Szolgáltatások…</button>`:''}
+      ${window.ROLE>=2?`<button class="btn small ${a.terminal?'primary':''}" onclick="showTerminal('${a.agentId}','${jesc(a.machineName)}')">Terminál${a.terminal?'':' (ki)'}</button>`:''}
       <button class="btn small danger" onclick="revoke('${a.agentId}')">Visszavonás</button>
     </div>`;
 
@@ -754,7 +754,7 @@ async function showUsers(){
   if(!d||!d.users){toast('Nincs jogosultság','err');return}
   const rows=d.users.map(u=>`<tr><td>${esc(u.username)}${u.disabled?' <span style="color:var(--warn)">(tiltva)</span>':''}</td>
     <td>${esc(u.roleName)}</td><td style="text-align:right">
-    <button class="btn small" onclick="editUser('${esc(u.username)}',${u.role},${u.disabled})">Módosít</button></td></tr>`).join('');
+    <button class="btn small" onclick="editUser('${jesc(u.username)}',${u.role},${u.disabled})">Módosít</button></td></tr>`).join('');
   openView(`<h3>Felhasználók</h3>
     <table class="upd-table"><tr><th>Név</th><th>Szerepkör</th><th></th></tr>${rows}</table>
     <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px">
@@ -780,14 +780,14 @@ function editUser(name,role,disabled){
       <option value="0"${role==0?' selected':''}>Megfigyelő</option>
       <option value="1"${role==1?' selected':''}>Kezelő</option>
       <option value="2"${role==2?' selected':''}>Adminisztrátor</option></select>
-    <button class="btn small" style="margin-top:10px" onclick="setRole('${esc(name)}')">Szerepkör mentése</button>
+    <button class="btn small" style="margin-top:10px" onclick="setRole('${jesc(name)}')">Szerepkör mentése</button>
     <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px">
       <label>Új jelszó</label><input id="ep" type="password" placeholder="min. 12 karakter">
-      <button class="btn small" style="margin-top:10px" onclick="setPw('${esc(name)}')">Jelszó mentése</button>
+      <button class="btn small" style="margin-top:10px" onclick="setPw('${jesc(name)}')">Jelszó mentése</button>
     </div>
     <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;gap:8px">
-      <button class="btn small" onclick="disableUser('${esc(name)}',${!disabled})">${disabled?'Engedélyezés':'Letiltás'}</button>
-      <button class="btn small danger" onclick="delUser('${esc(name)}')">Törlés</button>
+      <button class="btn small" onclick="disableUser('${jesc(name)}',${!disabled})">${disabled?'Engedélyezés':'Letiltás'}</button>
+      <button class="btn small danger" onclick="delUser('${jesc(name)}')">Törlés</button>
     </div>`);
 }
 async function setRole(n){const r=await api('user-role',{method:'POST',body:JSON.stringify({username:n,role:parseInt(document.getElementById('er').value)})});
@@ -798,7 +798,10 @@ async function disableUser(n,d){const r=await api('user-disable',{method:'POST',
   if(r&&r.ok){toast('Kész','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
 async function delUser(n){if(!await uiConfirm(n+' törlése?'))return;const r=await api('user-delete',{method:'POST',body:JSON.stringify({username:n})});
   if(r&&r.ok){toast('Törölve','ok');showUsers();}else toast((r&&r.error)||'Hiba','err');}
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+// JS-sztring kontextushoz (pl. onclick="fn('...')"): előbb JS-escape (\ és '), majd HTML-escape. Így az
+// aposztróf nem tudja kitörni az egyszeres idézőjeles JS-sztringet a HTML-attribútumban (XSS-védelem).
+function jesc(s){return esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))}
 
 // ---------------- monitorozás: teljes oldalon, kategóriánként (WebUi.MonitorJs) ----------------
 let monAgent=null;
@@ -989,7 +992,7 @@ function detailExtra(a){
   if(window.ROLE>=1) h+=`<div class="detail-actions" style="margin:10px 0">
       <button class="btn small" onclick="showInstall('${a.agentId}')">Program telepítése…</button>
       <button class="btn small" onclick="showUninstall('${a.agentId}')">Program eltávolítása…</button>
-      <button class="btn small danger" onclick="showReboot({agentIds:['${a.agentId}']},'${esc(a.machineName)}')">Újraindítás…</button></div>`;
+      <button class="btn small danger" onclick="showReboot({agentIds:['${a.agentId}']},'${jesc(a.machineName)}')">Újraindítás…</button></div>`;
   const wu=a.windowsUpdates||[];
   h+=`<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
     <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600">Windows Update</div>
@@ -1102,9 +1105,9 @@ function svcRender(){
   const rows=list.filter(s=>!q||(s.name+' '+(s.displayName||'')).toLowerCase().includes(q)).map(s=>{
     const dot=s.running?'<span class="badge ok">fut</span>':'<span class="badge">leállt</span>';
     const ctl=admin?`<span style="display:flex;gap:4px;flex:0 0 auto">
-        <button class="btn small" ${s.running?'disabled':''} onclick="svcDo('${esc(s.name)}','servicestart')">Indít</button>
-        <button class="btn small" ${s.running?'':'disabled'} onclick="svcDo('${esc(s.name)}','servicestop')">Leállít</button>
-        <button class="btn small primary" onclick="svcDo('${esc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
+        <button class="btn small" ${s.running?'disabled':''} onclick="svcDo('${jesc(s.name)}','servicestart')">Indít</button>
+        <button class="btn small" ${s.running?'':'disabled'} onclick="svcDo('${jesc(s.name)}','servicestop')">Leállít</button>
+        <button class="btn small primary" onclick="svcDo('${jesc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
     return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)">
       <div style="min-width:0"><div>${esc(s.displayName||s.name)} ${dot} ${s.auto?'<span class="badge" style="font-size:10px">auto</span>':''}</div>
       <div class="mono" style="font-size:11px;color:var(--muted)">${esc(s.name)}</div></div>${ctl}</div>`;
