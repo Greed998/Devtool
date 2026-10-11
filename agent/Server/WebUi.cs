@@ -1497,6 +1497,7 @@ function ruScope(r){const s=[];
     if(!r.agentId)s.push((r.sites||[]).length?r.sites.map(x=>esc(sn(x))).join(', '):'minden telephely');}
   s.push(r.agentId?'gép: '+esc(r.machine||'?'):r.group?'csoport: '+esc(r.group):'minden gép');
   if(window.IS_HUB)s.push(r.pushDown?'<span class="sbadge repo">lemegy a telephelyre</span>':'<span class="sbadge pending">csak a Központban</span>');
+  if(window.IS_HUB&&r.origin)s.push(`<span class="sbadge" title="Szerkesztésnél a Telephelyek és a „Leküldés” bejelölésével terjeszthető ki">⇧ felküldte: ${esc(r.origin)}</span>`);
   return s.join(' · ');}
 function ruDraw(){const d=_ru,main=document.getElementById('ruMain');if(!main||!d)return;
   const V=[['rules','Küszöb-szabályok',(d.rules||[]).length]];
@@ -1511,10 +1512,10 @@ function ruDraw(){const d=_ru,main=document.getElementById('ruMain');if(!main||!
   main.innerHTML=`<p style="font-size:13px;color:var(--muted);margin:0 0 12px">${hub?'A Központ által leküldött szabályok: itt csak olvashatók, a helyi szabályok mellett futnak (a Központban módosíthatók).'
       :'Alapból semmi nem riaszt. Egy szabály egy mérésre (vagy a „bármelyik” mintával minden példányára, pl. bármelyik lemezre) figyel; riaszt, ha a feltétel ennyi egymást követő mérésnél teljesül, és megszűnik, ha már nem. Értesítés: a riasztásnaplóban'+(window.IS_HUB?' és e-mailben (Beállítások).':', a Központban e-mailben is.')}</p>
     <table class="upd-table"><tr><th>Név</th><th>Feltétel</th><th>Hatókör</th><th></th></tr>
-    ${list.map((r,i)=>`<tr><td><b>${esc(r.name)}</b>${r.activeCount>0?` <span class="badge upd">${r.activeCount} riaszt</span>`:''}${r.enabled?'':' <span style="color:var(--muted)">(kikapcsolva)</span>'}</td>
+    ${list.map((r,i)=>`<tr><td><b>${esc(r.name)}</b>${r.activeCount>0?` <span class="badge upd">${r.activeCount} riaszt</span>`:''}${r.enabled?'':' <span style="color:var(--muted)">(kikapcsolva)</span>'}${ruPromoBadge(r)}</td>
       <td><span class="mono">${esc(r.metricKey)}</span> ${esc(r.opText)} <b>${esc(ruThr(r))}</b><div style="font-size:11px;color:var(--muted)">${r.forSamples} egymást követő ${window.IS_HUB?'5 perces átlag':'mérés'}${/\*/.test(r.metricKey)?' · minden példányra külön':''}</div></td>
       <td style="font-size:12px">${ruScope(r)}</td>
-      <td style="text-align:right;white-space:nowrap">${e?`<button class="btn small" onclick="ruEdit(${i})">Szerkesztés</button> <button class="btn small" onclick="ruToggle(${i})">${r.enabled?'Kikapcsolás':'Bekapcsolás'}</button> <button class="btn small danger" onclick="ruDel(${i})">Törlés</button>`:''}</td></tr>`).join('')
+      <td style="text-align:right;white-space:nowrap">${e?`${!window.IS_HUB&&d.hubConnected?`<button class="btn small" title="Központi (globális) szabály lesz belőle – a Központból a többi telephelyre is leküldhető" onclick="ruPromote(${i})">${r.promoted?'⇧ Újra felküld':'⇧ Központba'}</button> `:''}<button class="btn small" onclick="ruEdit(${i})">Szerkesztés</button> <button class="btn small" onclick="ruToggle(${i})">${r.enabled?'Kikapcsolás':'Bekapcsolás'}</button> <button class="btn small danger" onclick="ruDel(${i})">Törlés</button>`:''}</td></tr>`).join('')
       ||`<tr><td colspan="4" style="color:var(--muted)">${hub?'A Központ nem küldött szabályt.':'Még nincs szabály – „+ Új szabály”, vagy a gép Monitorozás nézetében a „+ küszöb” gomb.'}</td></tr>`}</table>`;}
 // ---- 1.5.7 (Központ): a telephely SAJÁT szabályai – szerkeszthetők; a telephely hajtja végre a következő betárcsázáskor.
 let _ruCtx=null,_ruSiteId='';
@@ -1530,11 +1531,24 @@ async function ruSiteDraw(){const main=document.getElementById('ruMain');if(!mai
     <p style="font-size:13px;color:var(--muted);margin:0 0 12px">${d.supports?'A telephely szerverének saját (helyi) szabályai, a telephely percenkénti mérésein futnak. Itt módosítva a telephely a következő betárcsázáskor átveszi és ő menti (a műveleti naplójába a te neveddel).'
       :'A telephely szervere még nem ismeri a Központból való szerkesztést (1.5.7-től) – frissítsd; addig csak olvasható.'}</p>
     <table class="upd-table"><tr><th>Név</th><th>Feltétel</th><th>Hatókör</th><th></th></tr>
-    ${list.map((r,i)=>`<tr><td><b>${esc(r.name)}</b>${r.enabled?'':' <span style="color:var(--muted)">(kikapcsolva)</span>'}</td>
+    ${list.map((r,i)=>`<tr><td><b>${esc(r.name)}</b>${r.enabled?'':' <span style="color:var(--muted)">(kikapcsolva)</span>'}${r.central?` <span class="sbadge repo" title="A Küszöb-szabályok lapon terjeszthető ki a többi telephelyre">központi: ${esc(r.central)}</span>`:''}</td>
       <td><span class="mono">${esc(r.metricKey)}</span> ${esc(r.opText)} <b>${esc(ruThr(r))}</b><div style="font-size:11px;color:var(--muted)">${r.forSamples} egymást követő mérés${/\*/.test(r.metricKey)?' · minden példányra külön':''}</div></td>
       <td style="font-size:12px">${r.agentId?'gép: '+esc(r.machine||'?'):r.group?'csoport: '+esc(r.group):'minden gép'}</td>
-      <td style="text-align:right;white-space:nowrap">${e?`<button class="btn small" onclick="ruEdit(${i})">Szerkesztés</button> <button class="btn small" onclick="ruToggle(${i})">${r.enabled?'Kikapcsolás':'Bekapcsolás'}</button> <button class="btn small danger" onclick="ruDel(${i})">Törlés</button>`:''}</td></tr>`).join('')
+      <td style="text-align:right;white-space:nowrap">${window.ROLE>=1&&!r.central?`<button class="btn small" title="Központi szabály lesz belőle (először csak erre a telephelyre); utána a többi telephelyre is leküldhető" onclick="ruSitePromote(${i})">⇧ Központi szabállyá</button> `:''}${e?`<button class="btn small" onclick="ruEdit(${i})">Szerkesztés</button> <button class="btn small" onclick="ruToggle(${i})">${r.enabled?'Kikapcsolás':'Bekapcsolás'}</button> <button class="btn small danger" onclick="ruDel(${i})">Törlés</button>`:''}</td></tr>`).join('')
       ||'<tr><td colspan="4" style="color:var(--muted)">A telephelynek nincs saját szabálya.</td></tr>'}</table>`;}
+// ---- 1.5.13: helyi szabály → központi (globális) szabály
+function ruPromoBadge(r){if(window.IS_HUB)return '';
+  if(r.fromHere)return ' <span class="sbadge repo">innen felküldve</span>';
+  if(r.superseded)return ' <span class="sbadge repo" title="A Központ ebből készült szabálya fut helyette (nincs dupla riasztás)">a Központ szabálya váltja ki</span>';
+  return r.promoted?' <span class="sbadge pending" title="A Központban központi szabály lett belőle; a többi telephelyre a Központból küldhető le">felküldve a Központba</span>':'';}
+async function ruPromote(i){const r=(_ru.rules||[])[i];if(!r)return;
+  if(!await uiConfirm(`Felküldöd a(z) „${r.name}” szabályt a Központba?\n\nA Központban központi (globális) szabály lesz belőle – először csak erre a telephelyre. A Központ Monitorozás → Küszöb-szabályok lapján a Telephelyek kiválasztásával és a „Leküldés a telephelyekre” bejelölésével küldhető le a többi szerverre. Ha ide is lejön, a helyi szabály mellette nem fut (nincs dupla riasztás).`))return;
+  const x=await api('alert-promote',{method:'POST',body:JSON.stringify({id:r.id})});
+  if(x&&x.ok){toast('Felküldve – a Központ a következő betárcsázáskor átveszi','ok');showRules('rules');}else toast((x&&x.error)||'Nem sikerült','err');}
+async function ruSitePromote(i){const r=_ruCtx&&_ruCtx.data.rules[i];if(!r)return;
+  if(!await uiConfirm(`Központi szabály legyen a(z) „${r.name}” szabályból?\n\nElőször csak erre a telephelyre szól és csak a Központban fut; a Küszöb-szabályok lapon a Telephelyek és a „Leküldés a telephelyekre” bejelölésével terjeszthető ki.`))return;
+  const x=await api('site-rule-promote',{method:'POST',body:JSON.stringify({siteId:_ruCtx.siteId,id:r.id})});
+  if(x&&x.ok){toast('Központi szabály lett – a Küszöb-szabályok lapon küldheted le a telephelyekre','ok');ruSiteDraw();}else toast((x&&x.error)||'Nem sikerült','err');}
 async function ruCatalog(){if(!_mcat)_mcat=(await api('metric-catalog',{method:'POST',body:'{}'}))||{keys:[],patterns:[]};return _mcat;}
 // A metrika-választó: előbb a „bármelyik” minták, utána a mért kulcsok kategóriánként; szűrhető.
 function ruOptions(sel,q){const c=_mcat||{keys:[],patterns:[]};q=(q||'').toLowerCase();

@@ -53,7 +53,7 @@ public static class Storage
         if (LogFolder.Same(full, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)) ||
             LogFolder.Same(full, Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)) ?? ""))
             return "Ez a mappa közös rendszermappa – adj meg egy saját almappát benne.";
-        // 1.5.12: a jelenleg is használt mappa (mentéskor) a miénk – azt nem vizsgáljuk „idegen, nem üres" mappaként. Eddig a
+        // 1.5.13: a jelenleg is használt mappa (mentéskor) a miénk – azt nem vizsgáljuk „idegen, nem üres" mappaként. Eddig a
         // változatlanul hagyott mérési-adatbázis-hely is „nem üres" hibát adott, és emiatt a TELJES mentés elbukott.
         if (current is { Length: > 0 } && LogFolder.Same(full, current)) { normalized = full; return null; }
         if (Directory.Exists(full) && Directory.EnumerateFileSystemEntries(full).Any() && !LooksOurs(full))
@@ -224,7 +224,7 @@ public static class Storage
         if (Validate(Logs, r.LogDir, dataDir, out var logDir, LogFolder.Dir(dataDir)) is { } e1) return "Naplók: " + e1;
         if (Validate(Backup, r.BackupDir, dataDir, out var bakDir, DataBackup.Root(dataDir)) is { } e2) return "Mentések: " + e2;
         if (Validate(MetricsKey, r.MetricsDir, dataDir, out var metDir, metrics.Dir) is { } e3) return "Mérési adatbázis: " + e3;
-        // 1.5.12: a három hely nem lehet ugyanaz a mappa (a fájlok összekeverednének, és egymás költöztetése / takarítása
+        // 1.5.13: a három hely nem lehet ugyanaz a mappa (a fájlok összekeverednének, és egymás költöztetése / takarítása
         // a másikét is érintené).
         if (SameDir(logDir, bakDir)) return "A naplók és a mentések nem lehetnek ugyanabban a mappában – adj meg külön mappát (pl. D:\\Fleet\\Mentesek).";
         if (SameDir(logDir, metDir)) return "A naplók és a mérési adatbázis nem lehetnek ugyanabban a mappában – adj meg külön mappát.";

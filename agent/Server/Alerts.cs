@@ -32,6 +32,14 @@ public sealed class AlertRule
     /// <summary>1.5.6: a küszöb megjelenítési egysége (pl. Mbit/s, Gbit/s, GB/s) - a Threshold mindig a mérés saját egységében van.</summary>
     public string DisplayUnit { get; set; } = "";
 
+    // ---- 1.5.13: helyi szabály felküldése a Központba (központi / globális szabálynak)
+    /// <summary>Telephelyen: a felküldési kérés jele (üres = nincs kérés); a Központ ez alapján egyszer veszi át.</summary>
+    public string PromoteToken { get; set; } = "";
+    /// <summary>Központban: melyik telephelyről jött a szabály (üres = a Központban készült).</summary>
+    public string OriginSite { get; set; } = "";
+    /// <summary>Központban és a telephelyre leküldve: melyik helyi szabályból lett.</summary>
+    public string OriginRuleId { get; set; } = "";
+
     public static readonly string[] DisplayUnits = { "", "KB/s", "MB/s", "GB/s", "kbit/s", "Mbit/s", "Gbit/s", "MB", "GB", "TB" };
     public static string CleanUnit(string? u) => DisplayUnits.Contains(u ?? "") ? u ?? "" : "";
 
@@ -229,6 +237,22 @@ public sealed class AlertStore
     public const string HubPrefix = "hub-";
     private List<AlertRule> _hubRules = new();
     public IReadOnlyList<AlertRule> HubRules { get { lock (_lock) return _hubRules.ToList(); } }
+    /// <summary>1.5.13: azok a helyi szabályok, amelyekből központi szabály lett, és az már le is jött – a helyi mellette nem fut (dupla riasztás ellen).</summary>
+    private HashSet<string> _superseded = new();
+    public bool IsSuperseded(string localId) { lock (_lock) return _superseded.Contains(localId); }
+
+    /// <summary>1.5.13: a helyi szabály felküldése a Központba (a következő betárcsázás viszi). False: nincs ilyen helyi szabály.</summary>
+    public bool Promote(string id)
+    {
+        lock (_lock)
+        {
+            var r = _rules.FirstOrDefault(x => x.Id == id);
+            if (r is null) return false;
+            r.PromoteToken = Guid.NewGuid().ToString("N")[..12];
+            Save();
+            return true;
+        }
+    }
 
     /// <summary>A Központ szabályainak cseréje; a megszűnt szabályok állapota törlődik.</summary>
     public void SetHubRules(IEnumerable<AlertRule> rules)
@@ -242,6 +266,9 @@ public sealed class AlertStore
                 if (now is null || ProtocolJson.Serialize(now) != ProtocolJson.Serialize(old)) DropStates(old.Id);
             }
             _hubRules = list;
+            var sup = list.Where(r => r.Enabled && r.OriginRuleId.Length > 0).Select(r => r.OriginRuleId).ToHashSet();
+            foreach (var id in sup.Where(id => !_superseded.Contains(id))) DropStates(id);   // a helyi riasztása átkerül a központira
+            _superseded = sup;
         }
     }
 
@@ -285,7 +312,7 @@ public sealed class AlertStore
 
         lock (_lock)
         {
-            foreach (var rule in _rules.Concat(_hubRules).Where(r => r.AppliesTo(agentId, groupList, siteId)))
+            foreach (var rule in _rules.Where(r => !_superseded.Contains(r.Id)).Concat(_hubRules).Where(r => r.AppliesTo(agentId, groupList, siteId)))
             {
                 if (rule.IsPattern)
                 {

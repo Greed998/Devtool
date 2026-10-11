@@ -1,3 +1,33 @@
+DevToolbox Fleet 1.5.13 – szabály felküldése a Központba, Tárolás-javítás
+==========================================================================
+Fleet 1.5.13 · Agent 1.5.13 · DevToolbox 1.5.13 (az agent és a DevToolbox kódja nem változott, csak a
+  közös verziószám)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. Beállítást nem kell módosítani.
+
+ÚJ – a telephelyen készült küszöb-szabály központi (globális) szabály lehet:
+  - Telephely: Monitorozás → Küszöb-szabályok → a szabály sorában „⇧ Központba”. A következő
+    betárcsázáskor a Központban központi szabály lesz belőle.
+  - Központ: Monitorozás → Telephelyek szabályai → „⇧ Központi szabállyá” (ugyanez a Központból).
+  - Biztonsági alapállás: a felküldött szabály először CSAK a küldő telephelyre szól, és csak a
+    Központban fut. A Központ Küszöb-szabályok lapján (jelölés: „⇧ felküldte: <telephely>”)
+    szerkesztéssel terjeszthető ki: Telephelyek (egy sincs bejelölve = mind) + „Leküldés a
+    telephelyekre” – a szerverek a következő betárcsázáskor átveszik.
+  - Nincs dupla riasztás: ha a központi szabály a küldő telephelyre is lejön, ott a helyi
+    szabály mellette nem fut („a Központ szabálya váltja ki”). Ha a Központban kikapcsolják vagy
+    törlik, a helyi újra fut.
+
+JAVÍTVA – Beállítások → Tárolás:
+  - „Mérési adatbázis: A mappa nem üres…” hiba a már használt mérési mappára (a benne lévő
+    metrics-napok almappa miatt) – emiatt a naplóméret és a többi hely sem mentődött, és
+    újraindításkor a mérési adatbázis csendben visszaállt volna az alapmappára.
+  - A Naplók, a Mentések és a Mérési adatbázis nem lehet ugyanaz a mappa – érthető hibaüzenet.
+  - A mentések takarítása csak a saját mentés-mappáit törli (eddig a megadott mappa bármely
+    almappáját a legújabb 10 után).
+
+============================================================
+
 DevToolbox Fleet 1.5.12 – telefonon és tableten is használható webfelület
 =========================================================================
 Fleet 1.5.12 · Agent 1.5.12 · DevToolbox 1.5.12 (az agent és a DevToolbox kódja nem változott, csak a

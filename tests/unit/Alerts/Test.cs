@@ -98,4 +98,22 @@ Chk("Más telephely gépére nem", s.Evaluate("a","A",M(99),null,"s2").Count==0)
 Chk("A kijelölt telephely gépére igen", RaiseCount(s.Evaluate("b","B",M(99),null,"s1"))==1);
 
 try{Directory.Delete(dir,true);}catch{}
+Console.WriteLine("--- 1.5.13: helyi szabály felküldése a Központba ---");
+var pd=Path.Combine(dir,"promo");Directory.CreateDirectory(pd);
+var pr=new AlertStore(pd);
+pr.Add(new AlertRule{Id="lemez",Name="Lemez",MetricKey="cpu.load",Op=AlertOp.Nagyobb,Threshold=80,ForSamples=1});
+Chk("Ismeretlen szabály nem küldhető fel",!pr.Promote("nincs"));
+Chk("Felküldés: jel kerül rá, és a mentés után is megmarad",pr.Promote("lemez")&&pr.Rules[0].PromoteToken.Length>0&&new AlertStore(pd).Rules[0].PromoteToken==pr.Rules[0].PromoteToken);
+var tok1=pr.Rules[0].PromoteToken;pr.Promote("lemez");
+Chk("Újraküldés: új jel (a Központ új kérésnek veszi)",pr.Rules[0].PromoteToken!=tok1);
+Chk("Amíg a Központ szabálya nem jött le, a helyi fut",RaiseCount(pr.Evaluate("a","A",M(99)))==1&&!pr.IsSuperseded("lemez"));
+pr.SetHubRules(new[]{new AlertRule{Id="k9",Name="Lemez (központi)",MetricKey="cpu.load",Op=AlertOp.Nagyobb,Threshold=80,ForSamples=1,OriginRuleId="lemez"}});
+Chk("A Központ szabálya lejött: a helyi riasztása megszűnik (átkerül)",pr.IsSuperseded("lemez")&&pr.ActiveStates().All(x=>x.RuleId!="lemez"));
+var ev2=pr.Evaluate("a","A",M(99));
+Chk("Csak a központi riaszt – nincs dupla riasztás",RaiseCount(ev2)==1&&ev2[0].RuleName=="Lemez (központi)");
+pr.SetHubRules(new[]{new AlertRule{Id="k9",Name="Lemez (központi)",MetricKey="cpu.load",Op=AlertOp.Nagyobb,Threshold=80,ForSamples=1,OriginRuleId="lemez",Enabled=false}});
+Chk("A Központban kikapcsolva: a helyi újra fut",!pr.IsSuperseded("lemez")&&RaiseCount(pr.Evaluate("a","A",M(99)))==1);
+pr.SetHubRules(Array.Empty<AlertRule>());
+Chk("A központi szabály törölve: a helyi marad és fut",pr.Rules.Count==1&&!pr.IsSuperseded("lemez"));
+
 Console.WriteLine("\n"+(fail==0?"MINDEN TESZT ATMENT":$"{fail} BUKOTT"));return fail;

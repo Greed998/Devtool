@@ -6,7 +6,7 @@ namespace DevToolbox.Fleet.Hub;
 
 public static class HubPaths
 {
-    public const string Version = "1.5.12";
+    public const string Version = "1.5.13";
     public const string ServiceName = "DevToolboxFleetHub";
 
     public static string DataDir =>

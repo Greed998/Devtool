@@ -17,7 +17,7 @@
     <AssemblyName>Fleet</AssemblyName>
     <RootNamespace>DevToolbox.Fleet</RootNamespace>
     <Product>DevToolbox Fleet</Product>
-    <Version>1.5.12</Version>
+    <Version>1.5.13</Version>
     <Company>Poltoli Informatika</Company>
     <ApplicationIcon>../Server/app.ico</ApplicationIcon>
     <!-- Onallo: az ugyfelgepeken jellemzoen nincs .NET 10, es enelkul a szolgaltatas

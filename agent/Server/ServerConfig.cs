@@ -109,6 +109,8 @@ public sealed class ServerConfig
     public List<CatalogItem> HubRejected { get; set; } = new();
     public string HubCatalogHash { get; set; } = "";
     public List<SiteAlertRule> HubAlertRules { get; set; } = new();
+    /// <summary>1.5.13 (Központ): a már átvett felküldési kérések (telephely|szabály|jel) – egy kérés csak egyszer lesz központi szabály.</summary>
+    public List<string> HubPromotedRules { get; set; } = new();
     /// <summary>A Központ mérés-kérése: a helyivel összefésülve megy az agentekhez (null: nincs).</summary>
     public MetricConfig? HubMonitor { get; set; }
 

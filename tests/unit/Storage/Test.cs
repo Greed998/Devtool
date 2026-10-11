@@ -49,7 +49,7 @@ Chk("A beállításban az új helyek és a naplóméret",cfg.LogDir==newLogs&&cf
 AuditLog.Write(data,"admin","új helyen");
 Chk("Az új napló az új helyre megy",File.ReadAllText(Path.Combine(newLogs,"audit.log")).Contains("új helyen"));
 
-// 1.5.12 – a felhasználó esete: a mérési mappában már ott vannak a napi fájlok (metrics-napok), a helyet nem változtatja,
+// 1.5.13 – a felhasználó esete: a mérési mappában már ott vannak a napi fájlok (metrics-napok), a helyet nem változtatja,
 // csak a naplóméretet. Eddig: „Mérési adatbázis: A mappa nem üres" – és emiatt SEMMI nem mentődött.
 Console.WriteLine("--- Változatlan hely, a mérési mappában napi fájlokkal ---");
 Directory.CreateDirectory(Path.Combine(newMet,MetricStore.DaysFolder));

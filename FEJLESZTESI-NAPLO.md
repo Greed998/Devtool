@@ -11,10 +11,10 @@ Minden kiadásnál frissül. Verziózás: kisebb frissítésnél **csak az utols
 
 | Program | Verzió | Szerep | Hol fut |
 |---|---|---|---|
-| **DevToolbox** (asztali) | 1.5.12 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
-| **DevToolboxAgent** | 1.5.12 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
-| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.12 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
-| **Fleet** – Központ szerep (FleetHub) | 1.5.12 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
+| **DevToolbox** (asztali) | 1.5.13 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
+| **DevToolboxAgent** | 1.5.13 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
+| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.13 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
+| **Fleet** – Központ szerep (FleetHub) | 1.5.13 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
 
 Mind önálló, .NET 10-es, 64 bites, egyfájlos exe – a gépre .NET nem kell. **1.3.0-tól a FleetServer és a FleetHub
 egyetlen exe (`Fleet.exe`)**, benne a beépített agenttel; a szerepet telepítéskor választod (szerver / Központ /
@@ -471,6 +471,24 @@ viselkedése http.sys alatt. Ellenőrzés: `DevToolboxAgent.exe diag`, `FleetHub
 ---
 
 ## 5. Verziótörténet
+
+### Fleet 1.5.13 · Agent 1.5.13 · DevToolbox 1.5.13 – szabály felküldése a Központba, Tárolás-javítás (2026-10-11)
+A felhasználó kérése: a telephelyen létrehozott szabály felküldhető legyen a Központba globális figyelésnek, és onnan
+leküldhető a szerverekre; a Tárolás beállítás nem volt menthető.
+- **Felküldés (telephely):** `AlertRule.PromoteToken` (új jel minden kérésnél, `AlertStore.Promote`, `/web/api/alert-promote`,
+  kezelő), a `SiteAlertRule.PromoteToken` a meglévő `LocalRules` összesítőben megy fel (új mezők a VÉGÉN). A helyi
+  szerkesztés megtartja a jelet (`SiteOps.SaveLocalRule`).
+- **Átvétel (Központ):** `HubStore.OnPromoteRules` → `PromoteFromSite`: egy kérés (telephely|szabály|jel) csak egyszer
+  (`ServerConfig.HubPromotedRules`, max. 2000), törlés után sem jön vissza; ugyanabból a helyi szabályból egy központi.
+  Biztonsági alapállás: `Sites=[küldő]`, `PushDown=false` – egy telephely (akár feltört) más telephelyre nem hat; a
+  kiterjesztés a Központ kezelőjének döntése (a meglévő Küszöb-szabályok szerkesztő). Idegen gépre szóló szabálynál a gép
+  kimarad. A Központ felületéről is: `/web/api/site-rule-promote` (kezelő + a telephelyhez jog). `OriginSite/OriginRuleId`
+  szerkesztéskor megmarad.
+- **Dupla riasztás ellen:** a leküldött szabály `OriginRuleId`-t csak a küldő telephely kapja; ott az `AlertStore` a
+  kiváltott helyi szabályt nem értékeli (`_superseded`, csak bekapcsolt központi szabálynál), az aktív állapota törlődik.
+- **Tárolás:** a jelenlegi hely nem esik az „idegen, nem üres” vizsgálat alá; a `metrics-napok` / `metrics-telephelyek`
+  almappa a miénk; a három hely nem lehet azonos mappa; a `DataBackup` takarítása csak az `ÉÉÉÉHHNN-ÓÓPPMM-` mappákat törli.
+- Teszt: `unit/Alerts` (felküldés, kiváltás, nincs dupla riasztás, kikapcsolás/törlés után a helyi fut), `unit/Storage`.
 
 ### Fleet 1.5.12 · Agent 1.5.12 · DevToolbox 1.5.12 – webfelület telefonon és tableten (2026-10-11)
 A felhasználó kérése: a webfelület telefonon és tableten is jól jelenjen meg; minden verzió 1.5.12 (az agent és a DevToolbox

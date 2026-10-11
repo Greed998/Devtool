@@ -11,7 +11,7 @@ public static class SiteOps
     public static SiteAlertRule ToSite(AlertRule r) => new()
     {
         Id = r.Id, Name = r.Name, MetricKey = r.MetricKey, Op = (int)r.Op, Threshold = r.Threshold, Group = r.Group,
-        AgentId = r.AgentId, ForSamples = r.ForSamples, Enabled = r.Enabled, DisplayUnit = r.DisplayUnit
+        AgentId = r.AgentId, ForSamples = r.ForSamples, Enabled = r.Enabled, DisplayUnit = r.DisplayUnit, PromoteToken = r.PromoteToken
     };
 
     /// <summary>Egy helyi szabály ellenőrzése és mentése (új vagy módosított). Hibánál a hiba szövege, különben null.</summary>
@@ -36,7 +36,8 @@ public static class SiteOps
             AgentId = agentId, Group = agentId.Length > 0 ? "" : GroupOps.Clean(r.Group),
             ForSamples = Math.Clamp(r.ForSamples, 1, 60), Enabled = r.Enabled, DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit)
         };
-        if (alerts.Rules.Any(x => x.Id == rule.Id)) alerts.Update(rule); else alerts.Add(rule);
+        // 1.5.13: a felküldési kérés a szerkesztés után is megmarad (a Központ így nem veszi át újra)
+        if (alerts.Rules.FirstOrDefault(x => x.Id == rule.Id) is { } prev) { rule.PromoteToken = prev.PromoteToken; alerts.Update(rule); } else alerts.Add(rule);
         saved = rule;
         return null;
     }

@@ -33,7 +33,7 @@ public sealed class HubClient
     {
         Id = AlertStore.HubPrefix + r.Id, Name = r.Name, MetricKey = r.MetricKey, Op = (AlertOp)Math.Clamp(r.Op, 0, 2), Threshold = r.Threshold,
         Group = r.Group, AgentId = r.AgentId, ForSamples = Math.Clamp(r.ForSamples, 1, 60), Enabled = r.Enabled,
-        DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit)
+        DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit), OriginRuleId = r.OriginRuleId.Length <= 64 ? r.OriginRuleId : ""
     };
     // A Kozpont exejenek letoltese (100+ MB) - kulon kliens hosszabb idokorlattal.
     private readonly HttpClient _download = new() { Timeout = TimeSpan.FromMinutes(15) };

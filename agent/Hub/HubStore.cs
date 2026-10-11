@@ -125,6 +125,8 @@ public sealed class HubStore
     public Func<HubCatalog>? CatalogFor { get; set; }
     /// <summary>A telephelyre leküldendő küszöb-szabályok (null: nem küldünk).</summary>
     public Func<HubSite, List<SiteAlertRule>>? AlertRulesFor { get; set; }
+    /// <summary>1.5.13: a telephely felküldött helyi szabályai (PromoteToken) – a Központ központi szabályt készít belőlük.</summary>
+    public Action<HubSite, List<SiteAlertRule>>? OnPromoteRules { get; set; }
     /// <summary>A Központ mérés-kérése a telephelynek (a telephely a sajátjával összefésüli).</summary>
     public Func<HubSite, MetricConfig>? MonitorFor { get; set; }
     /// <summary>1.5.6: a telephely gépeinek CVE-találatai (a második paraméter a telephelynél levő lenyomat; null = nem változott).</summary>
@@ -526,6 +528,8 @@ public sealed class HubStore
                 var logsOk = OnLogs is not null;
                 if (body.Logs is { Count: > 0 } logs && OnLogs is { } lh)
                     try { lh(site, logs); } catch { logsOk = false; }
+                if (body.Summary.LocalRules?.Where(r => r.PromoteToken.Length > 0).ToList() is { Count: > 0 } promo && OnPromoteRules is { } pr)
+                    try { pr(site, promo); } catch { }
                 if ((siteEvents.Outages.Count > 0 || siteEvents.Snmp.Count > 0 || siteEvents.Services.Count > 0) && OnSiteEvents is { } se)
                     try { se(site, siteEvents.Outages, siteEvents.Snmp, siteEvents.Services); } catch { }
 

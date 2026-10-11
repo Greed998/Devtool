@@ -268,6 +268,12 @@ public sealed class SiteAlertRule
     public bool Enabled { get; set; } = true;
     /// <summary>1.5.6: a küszöb megjelenítési egysége (csak a felületnek; a Threshold a mérés saját egységében).</summary>
     public string DisplayUnit { get; set; } = "";
+
+    // ---- 1.5.13 (új mezők a VÉGÉN)
+    /// <summary>Telephely → Központ: a helyi szabály felküldése központi szabálynak (új érték = új kérés; üres = nincs kérés).</summary>
+    public string PromoteToken { get; set; } = "";
+    /// <summary>Központ → telephely: ez a központi szabály ebből a helyi szabályból lett – a telephely a helyit mellette nem futtatja.</summary>
+    public string OriginRuleId { get; set; } = "";
 }
 
 /// <summary>

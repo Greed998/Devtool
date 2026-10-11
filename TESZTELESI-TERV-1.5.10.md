@@ -87,6 +87,15 @@ Ez időben elhúzódó (napok), de ellenőrizhető:
 - [ ] Felugró ablakok (pl. Újraindítás, Szolgáltatások) kiférnek; a Terminál beviteli sora látszik; gépeléskor nem nagyít rá az iPhone.
 - [ ] Tableten (álló és fekvő) a Programtár / gépkezelés kategória-menüje felül, vízszintes sávban.
 
+### 2.6c Szabály felküldése a Központba és leküldése (1.5.13)
+- [ ] Telephely → Monitorozás → Küszöb-szabályok → egy helyi szabálynál **⇧ Központba** → „felküldve a Központba” jelölés.
+- [ ] Pár perc múlva (betárcsázás) a Központ Küszöb-szabályai között megjelenik: „⇧ felküldte: <telephely>”, „csak a Központban”.
+- [ ] Központban a szabály szerkesztése: Telephelyek üresen (= mind) + **Leküldés a telephelyekre** → a többi szerveren a
+      „A Központtól” fülön megjelenik; a küldő telephelyen a helyi szabály mellett „a Központ szabálya váltja ki”.
+- [ ] A küldő telephelyen egy riasztás csak EGYSZER jön (a központi szabálytól).
+- [ ] Központ → Telephelyek szabályai → **⇧ Központi szabállyá** ugyanezt adja; másodszorra: „Ebből már van központi szabály”.
+- [ ] Tárolás: a meglévő mérési mappa mellett a naplóméret menthető; Naplók = Mentések mappa → érthető hiba.
+
 ### 2.7 Hol nézz naplót
 - Gép (agent): `C:\ProgramData\DevToolbox-Agent\agent.log`
 - Telephely-szerver: `C:\ProgramData\DevToolbox-Fleet\logs\fleet-server.log`, `audit.log`, `alerts.log`

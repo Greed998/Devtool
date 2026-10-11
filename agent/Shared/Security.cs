@@ -236,7 +236,7 @@ public static class DataBackup
                 foreach (var f in Directory.GetFiles(logs, "*.log"))
                     File.Copy(f, Path.Combine(dest, Path.GetFileName(f)), overwrite: true);
 
-            // 1.5.12: csak a mentés-almappák (yyyyMMdd-HHmmss-…) közül törlünk – eddig a mappa MINDEN almappájából,
+            // 1.5.13: csak a mentés-almappák (yyyyMMdd-HHmmss-…) közül törlünk – eddig a mappa MINDEN almappájából,
             // így ha a mentésmappában más is volt (pl. a mérési adatok napi fájljai), az is törlődhetett.
             foreach (var old in Directory.GetDirectories(root).Where(d => IsBackupDir(Path.GetFileName(d))).OrderByDescending(d => d).Skip(10))
                 try { Directory.Delete(old, true); } catch { }

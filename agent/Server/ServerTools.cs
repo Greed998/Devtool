@@ -49,7 +49,7 @@ public static class SrvLog
 
 public static class ServerBuild
 {
-    public const string Version = "1.5.12";
+    public const string Version = "1.5.13";
 }
 
 public static class ServerPaths

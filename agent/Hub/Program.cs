@@ -239,8 +239,51 @@ static class HubProgram
             .Select(r => new SiteAlertRule
             {
                 Id = r.Id, Name = r.Name, MetricKey = r.MetricKey, Op = (int)r.Op, Threshold = r.Threshold, Group = r.Group,
-                AgentId = r.AgentId, ForSamples = r.ForSamples, Enabled = r.Enabled, DisplayUnit = r.DisplayUnit
+                AgentId = r.AgentId, ForSamples = r.ForSamples, Enabled = r.Enabled, DisplayUnit = r.DisplayUnit,
+                OriginRuleId = r.OriginSite == s.SiteId ? r.OriginRuleId : ""
             }).ToList();
+
+    /// <summary>
+    /// 1.5.13: egy telephely helyi szabályából központi szabály. Biztonsági alapállás: csak az adott telephelyre szól, és
+    /// csak a Központban fut (nem megy le) – a többi telephelyre a Központ kezelője terjeszti ki (Telephelyek, „Leküldés”).
+    /// A telephelyről jött kérés (token) csak egyszer kerül át, akkor sem, ha a központi szabályt később törlik.
+    /// by: a Központ felhasználója (a Központ felületéről), üres = a telephely kérése. Visszaadja a hibát, vagy null-t.
+    /// </summary>
+    private static string? PromoteFromSite(HubSite site, SiteAlertRule r, string by, out AlertRule? created)
+    {
+        created = null;
+        var key = (r.MetricKey ?? "").Trim();
+        if (r.Id.Length is 0 or > 64 || !AlertRule.ValidKey(key) || !double.IsFinite(r.Threshold)) return "Hibás szabály.";
+        lock (_promoteLock)
+        {
+            if (by.Length == 0)
+            {
+                var mark = $"{site.SiteId}|{r.Id}|{r.PromoteToken}";
+                if (r.PromoteToken.Length is 0 or > 64 || _config.HubPromotedRules.Contains(mark)) return null;
+                _config.HubPromotedRules.Add(mark);
+                if (_config.HubPromotedRules.Count > 2000) _config.HubPromotedRules.RemoveRange(0, _config.HubPromotedRules.Count - 2000);
+                _config.Save(HubPaths.DataDir);
+            }
+            if (_alerts.Rules.FirstOrDefault(x => x.OriginSite == site.SiteId && x.OriginRuleId == r.Id) is { } have)
+                return by.Length > 0 ? $"Ebből már van központi szabály: {have.Name}" : null;
+            var agentId = (r.AgentId ?? "").Trim();
+            if (agentId.Length > 0 && !SiteHasAgent(site.SiteId, agentId)) agentId = "";   // idegen gép: ne szűkítsen máshová
+            var name = (r.Name ?? "").Trim();
+            created = new AlertRule
+            {
+                Name = name.Length == 0 ? key : name.Length > 120 ? name[..120] : name,
+                MetricKey = key, Op = (AlertOp)Math.Clamp(r.Op, 0, 2), Threshold = r.Threshold, AgentId = agentId,
+                Group = agentId.Length > 0 ? "" : GroupOps.Clean(r.Group), ForSamples = Math.Clamp(r.ForSamples, 1, 60), Enabled = r.Enabled,
+                DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit), Sites = agentId.Length > 0 ? new() : new() { site.SiteId }, PushDown = false,
+                OriginSite = site.SiteId, OriginRuleId = r.Id
+            };
+            _alerts.Add(created);
+        }
+        HubLog.Write($"Küszöb-szabály a telephelyről ({site.Name}): {created.Name} – központi szabály lett");
+        AuditLog.Write(HubPaths.DataDir, by.Length > 0 ? by : "telephely: " + site.Name, "küszöb felküldése központi szabálynak", $"{site.Name}: {created.Name}");
+        return null;
+    }
+    private static readonly object _promoteLock = new();
 
     private static bool SiteHasAgent(string siteId, string agentId) =>
         _store.Sites.FirstOrDefault(s => s.SiteId == siteId)?.LastSummary?.Agents.Any(a => a.AgentId == agentId) == true;
@@ -328,6 +371,7 @@ static class HubProgram
         // 1.5.0: a Központ a programtár mestere; a küszöb-szabályok (leküldésre jelöltek) és a mérés-kérés is lemegy.
         _store.CatalogFor = HubCatalogNow;
         _store.AlertRulesFor = AlertRulesFor;
+        _store.OnPromoteRules = (site, rules) => { foreach (var r in rules) PromoteFromSite(site, r, "", out _); };
         _store.MonitorFor = s => _config.HubMonEnabled && (_config.HubMonSites.Count == 0 || _config.HubMonSites.Contains(s.SiteId))
             ? _config.MonitorAsConfig() : ServerConfig.NoMonitor();
 
@@ -998,7 +1042,8 @@ static class HubProgram
                     {
                         id = r.Id, name = r.Name, metricKey = r.MetricKey, op = (int)r.Op, opText = r.OpText, threshold = r.Threshold,
                         agentId = r.AgentId, machine = mach.GetValueOrDefault(r.AgentId, ""), forSamples = r.ForSamples, group = r.Group, displayUnit = r.DisplayUnit,
-                        sites = r.Sites, pushDown = r.PushDown, enabled = r.Enabled, activeCount = active.Count(a => a.RuleId == r.Id)
+                        sites = r.Sites, pushDown = r.PushDown, enabled = r.Enabled, activeCount = active.Count(a => a.RuleId == r.Id),
+                        origin = r.OriginSite.Length > 0 ? _store.Sites.FirstOrDefault(x => x.SiteId == r.OriginSite)?.Name ?? "?" : ""
                     }),
                     active = active.Select(a => new
                     {
@@ -1044,7 +1089,8 @@ static class HubProgram
                     MetricKey = r.MetricKey.Trim(), Op = (AlertOp)Math.Clamp(r.Op, 0, 2), Threshold = r.Threshold,
                     AgentId = r.AgentId ?? "", ForSamples = Math.Clamp(r.ForSamples, 1, 60), Enabled = r.Enabled,
                     Group = (r.AgentId ?? "").Length > 0 ? "" : GroupOps.Clean(r.Group), Sites = (r.AgentId ?? "").Length > 0 ? new() : sites, PushDown = r.PushDown,
-                    DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit)
+                    DisplayUnit = AlertRule.CleanUnit(r.DisplayUnit),
+                    OriginSite = existing?.OriginSite ?? "", OriginRuleId = existing?.OriginRuleId ?? ""
                 };
                 if (existing is not null) _alerts.Update(rule); else _alerts.Add(rule);
                 AuditLog.Write(HubPaths.DataDir, user!, "küszöb mentése: " + rule.Name);
@@ -1091,11 +1137,24 @@ static class HubProgram
                     {
                         id = x.Id, name = x.Name, metricKey = x.MetricKey, op = x.Op, opText = x.Op switch { 1 => "<", 2 => "=", _ => ">" },
                         threshold = x.Threshold, agentId = x.AgentId, machine = ag.FirstOrDefault(a => a.AgentId == x.AgentId)?.MachineName ?? "",
-                        group = x.Group, forSamples = x.ForSamples, enabled = x.Enabled, displayUnit = x.DisplayUnit, activeCount = 0
+                        group = x.Group, forSamples = x.ForSamples, enabled = x.Enabled, displayUnit = x.DisplayUnit, activeCount = 0,
+                        central = _alerts.Rules.FirstOrDefault(h => h.OriginSite == s.SiteId && h.OriginRuleId == x.Id)?.Name ?? ""
                     }),
                     groups = (s.LastSummary?.GroupNames ?? new()).Concat(ag.SelectMany(GroupsOf)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(g => g),
                     machines = ag.OrderBy(a => a.MachineName, StringComparer.CurrentCultureIgnoreCase).Select(a => new { agentId = a.AgentId, name = a.MachineName })
                 });
+                return;
+            }
+            case "/web/api/site-rule-promote":
+            {
+                // 1.5.13: a telephely helyi szabályából központi szabály (a Központ felületéről)
+                if (NeedKezelo()) { await Json(ctx, new { ok = false, error = "kezelői jog kell" }); return; }
+                var r = ProtocolJson.Deserialize<SiteRuleReq>(body);
+                var s = r is null || !CanTouch(user, r.SiteId) ? null : _store.Sites.FirstOrDefault(x => x.SiteId == r.SiteId && !x.Revoked);
+                var lr = s?.LastSummary?.LocalRules?.FirstOrDefault(x => x.Id == r!.Id);
+                if (s is null || lr is null) { await Json(ctx, new { ok = false, error = "Nincs ilyen szabály ezen a telephelyen." }); return; }
+                var err = PromoteFromSite(s, lr, user ?? "", out _);
+                await Json(ctx, new { ok = err is null, error = err });
                 return;
             }
             case "/web/api/site-rule-save":

@@ -1473,12 +1473,14 @@ public static async Task HandleWebApi(HttpListenerContext ctx, FleetStore store,
                 id = r.Id, name = r.Name, metricKey = r.MetricKey, op = (int)r.Op, opText = r.OpText,
                 threshold = r.Threshold, agentId = r.AgentId, machine = r.AgentId.Length > 0 ? store.GetAgent(r.AgentId)?.MachineName ?? "?" : "",
                 group = r.Group, forSamples = r.ForSamples, enabled = r.Enabled, hub, displayUnit = r.DisplayUnit,
-                activeCount = active.Count(a => a.RuleId == r.Id)
+                activeCount = active.Count(a => a.RuleId == r.Id),
+                // 1.5.13: felküldve a Központba / a Központ szabálya váltja ki / a Központtól jött, de innen indult
+                promoted = r.PromoteToken.Length > 0, superseded = !hub && Alerts.IsSuperseded(r.Id), fromHere = hub && r.OriginRuleId.Length > 0
             };
             var rules = all.Select(r => Rule(r, false));
             await WriteJson(ctx, new
             {
-                rules,
+                rules, hubConnected = config.HubUrl.Length > 0,
                 // A Központtól kapott szabályok: itt csak olvashatók, a helyiek mellett futnak.
                 hubRules = Alerts.HubRules.Select(r => Rule(r, true)),
                 active = active.OrderByDescending(a => a.SinceUtc).Select(a => new
@@ -1522,6 +1524,21 @@ public static async Task HandleWebApi(HttpListenerContext ctx, FleetStore store,
             }, out var rule);
             if (err is not null) { await WriteJson(ctx, new { ok = false, error = err }); return; }
             AuditLog.Write(ServerPaths.DataDir, user, "küszöb mentése", $"{rule!.Name}: {rule.MetricKey} {rule.OpText} {rule.Threshold}");
+            await WriteJson(ctx, new { ok = true });
+            return;
+        }
+
+        case "/web/api/alert-promote":
+        {
+            // 1.5.13: a helyi szabály felküldése a Központba – ott központi szabály lesz (először csak erre a telephelyre),
+            // és a Központból a többi telephelyre is leküldhető. A helyi a Központ szabályának megérkezéséig fut tovább.
+            if (NeedKezelo()) { await WriteJson(ctx, new { ok = false, error = "Ehhez kezelői vagy admin jog kell." }); return; }
+            if (config.HubUrl.Length == 0) { await WriteJson(ctx, new { ok = false, error = "A szerver nincs Központhoz csatlakoztatva." }); return; }
+            var r = ProtocolJson.Deserialize<AlertReq>(body);
+            if (r?.Id is not { Length: > 0 } || r.Id.StartsWith(AlertStore.HubPrefix) || !Alerts.Promote(r.Id))
+            { await WriteJson(ctx, new { ok = false, error = "Nincs ilyen helyi szabály." }); return; }
+            AuditLog.Write(ServerPaths.DataDir, user, "küszöb felküldése a Központba", Alerts.RuleName(r.Id));
+            HubClient.Instance.Wake();
             await WriteJson(ctx, new { ok = true });
             return;
         }
