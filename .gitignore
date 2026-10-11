@@ -1,15 +1,19 @@
-# Build output
+# Build output (ide kerül minden lefordított exe/dll/pdb)
 bin/
 obj/
+out/
+.vs/
 *.user
 *.suo
-.vs/
 
-# Published binaries
-*.exe
-*.dll
-*.pdb
+# AIO csomag kimenete
+AIO/
 
-# Local certs / secrets
+# Kódaláírás / titkok
+cert/
 *.pfx
 *.key
+*.snk
+
+# MEGJEGYZÉS: a vendorolt agent/ThirdParty/wireguard-nt/amd64/wireguard.dll
+# SZÁNDÉKOSAN verziózva van (a Fleet build beágyazza) – ezért NINCS itt "*.dll" szabály.
