@@ -47,6 +47,7 @@ public sealed class HubClient
     private Dictionary<string, int> _installedSent = new();
     private DateTime _installedSentAt = DateTime.MinValue;
     private Dictionary<string, int> _componentsSent = new();
+    private Dictionary<string, int> _servicesSent = new();
     // A Központ az előző válaszban jelezte, hogy fogadja a naplókat (régi Központnak nem küldjük).
     private bool _hubAcceptsLogs;
 
@@ -149,9 +150,10 @@ public sealed class HubClient
         }
         // Valtozatlan programlista helyett csak jelzes (az 1.3.0+ Kozpont megtartja az elozot - ugyanaz a
         // Kozpont, amelyik a metrikakat is fogadja; regebbinek mindig a teljes listat kuldjuk).
-        if (DateTime.UtcNow - _installedSentAt > TimeSpan.FromHours(6)) { _installedSent = new(); _componentsSent = new(); _installedSentAt = DateTime.UtcNow; }
+        if (DateTime.UtcNow - _installedSentAt > TimeSpan.FromHours(6)) { _installedSent = new(); _componentsSent = new(); _servicesSent = new(); _installedSentAt = DateTime.UtcNow; }
         var installedNow = new Dictionary<string, int>();
         var componentsNow = new Dictionary<string, int>();
+        var servicesNow = new Dictionary<string, int>();
         foreach (var a in body.Summary.Agents)
         {
             var h = string.Concat(a.Installed.Select(i => i.Id + "|" + i.Version + ";")).GetHashCode();
@@ -162,6 +164,10 @@ public sealed class HubClient
             var ch = a.Components is null ? 0 : string.Concat(a.Components.Select(c => c.Kind + "|" + c.Name + "|" + c.Version + ";")).GetHashCode();
             componentsNow[a.AgentId] = ch;
             if (_hubAcceptsMetrics && _componentsSent.TryGetValue(a.AgentId, out var pc) && pc == ch) a.Components = null;
+            // 1.5.10: a szolgáltatás-lista is csak változáskor megy fel (null = a régi marad a Központnál).
+            var sh = a.ServiceList is null ? 0 : string.Concat(a.ServiceList.Select(s => s.Name + "|" + (s.Running ? 1 : 0) + "|" + (s.Auto ? 1 : 0) + ";")).GetHashCode();
+            servicesNow[a.AgentId] = sh;
+            if (_hubAcceptsMetrics && _servicesSent.TryGetValue(a.AgentId, out var ps) && ps == sh) a.ServiceList = null;
         }
 
         // 1.5.7: a naplók új sorai (az USB-napló nem) – csak ha a Központ jelezte, hogy fogadja; a mutató a válasz után lép.
@@ -241,6 +247,7 @@ public sealed class HubClient
         _hubAcceptsMetrics = reply.AcceptsMetrics;
         foreach (var kv in installedNow) _installedSent[kv.Key] = kv.Value;   // ezek a listak mar a Kozpontnal vannak
         foreach (var kv in componentsNow) _componentsSent[kv.Key] = kv.Value;
+        foreach (var kv in servicesNow) _servicesSent[kv.Key] = kv.Value;
         var changed = false;
         if (nextMetricsFrom > config.HubMetricsFromTs) { config.HubMetricsFromTs = nextMetricsFrom; changed = true; }
         // A Kozpont szabalyai: csak valtozaskor irunk (a betarcsazas 5 percenkent jon).
@@ -497,7 +504,8 @@ public sealed class HubClient
             Installed = a.LastStatus?.Installed ?? new(),
             IsVirtual = a.LastStatus?.IsVirtual,
             Score = a.Revoked ? null : TryScore(a),
-            Components = a.LastStatus?.Components
+            Components = a.LastStatus?.Components,
+            ServiceList = a.LastStatus?.ServiceList
         }).ToList()
     };
 

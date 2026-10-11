@@ -317,6 +317,8 @@ public sealed class SiteAgent
     public SiteScore? Score { get; set; }
     /// <summary>1.5.6: driverek és firmware (a CVE-kereséshez); null = nem változott az előző küldés óta, a Központ megtartja.</summary>
     public List<ComponentInfo>? Components { get; set; }
+    /// <summary>1.5.10: a gép szolgáltatásai (a Központ szolgáltatás-kezelő paneljéhez); null = nem változott az előző küldés óta, a Központ megtartja.</summary>
+    public List<ServiceEntry>? ServiceList { get; set; }
 }
 
 /// <summary>A Központ sérülékenység-találatai a telephely gépeire (1.5.6) – csak ha a telephelynél levő lenyomat eltér.</summary>

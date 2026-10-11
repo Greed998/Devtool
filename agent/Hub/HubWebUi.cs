@@ -199,7 +199,7 @@ public static class HubWebUi
       const up=a.updates||[],wu=a.windowsUpdates||[],ins=a.installed||[];
       const B=(f,l,c)=>w?`<button class="btn small ${c||''}" onclick="${f}">${l}</button>`:'';
       const cv=m.cve,cvN=cv?(cv.findings||[]).length:0;
-      const V=[['sum','Áttekintés',''],['upd','Frissíthető programok',up.length],['wu','Windows Update',wu.length],['cve','Sérülékenységek',cvN||''],['inst','Program telepítése',''],['apps','Telepített programok',ins.length],['reboot','Újraindítás','']];
+      const V=[['sum','Áttekintés',''],['upd','Frissíthető programok',up.length],['wu','Windows Update',wu.length],['cve','Sérülékenységek',cvN||''],['inst','Program telepítése',''],['apps','Telepített programok',ins.length],['svc','Szolgáltatások',''],['reboot','Újraindítás','']];
       document.getElementById('mcMenu').innerHTML=V.map(v=>`<button class="${_mv===v[0]?'sel':''}" onclick="mcGo('${v[0]}')"><span>${v[1]}</span><span class="cnt">${v[2]}</span></button>`).join('');
       const old=vNewer(st.agentPackageVersion,a.agentVersion),u=m.upd||{};let h='';
       if(_mv==='sum'){
@@ -233,6 +233,9 @@ public static class HubWebUi
         h=ins.length?`<input id="mcF" class="search" style="width:320px;max-width:100%;margin-bottom:10px" placeholder="Szűrés…" oninput="fltRows('mcF','mcrow')">
           <table class="upd-table"><tr><th>Program</th><th>Verzió</th><th></th></tr>${ins.map((p,i)=>`<tr class="mcrow" data-n="${esc((p.name+' '+(p.id||'')).toLowerCase())}"><td>${esc(p.name)}<div class="ver-old mono" style="font-size:11px">${esc(p.id||'')}</div></td><td class="ver-old">${esc(p.version||'')}</td><td style="text-align:right">${p.id?B(`unOne(${i})`,'Eltávolítás','danger'):''}</td></tr>`).join('')}</table>`
           :'<div class="empty">A telephely még nem küldött programlistát.</div>';
+      } else if(_mv==='svc'){
+        if(!m._svc){ h='<div class="muted">Betöltés…</div>'; mcLoadSvc(); }
+        else h=hubSvcHtml(m._svc);
       } else {
         h=w?`<div style="display:flex;gap:8px;align-items:center"><input id="rbMin" type="number" value="5" style="width:80px"> perc múlva ${B("rebootM()",'Újraindítás ütemezése','danger')}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:8px">A gép felhasználója figyelmeztetést kap. Soha nem automatikus – csak erre a gombra.</div>`:'<div class="empty">Újraindításhoz kezelői jog kell.</div>';
@@ -241,6 +244,31 @@ public static class HubWebUi
     // Telepítés erre a gépre: csomag vagy program a programtárból (WebUi.CatalogJs installPicker).
     function machInstall(){const m=curM;installPicker(`Program telepítése – ${esc(m.a.machineName)}`,(k,t,l)=>{curM=m;
       task(k,t,`${k==='installbundle'?'Csomag':'Program'}: ${l} – telepítés erre a gépre: ${m.a.machineName}?`);});}
+    // 1.5.10: szolgáltatás-kezelő fül. A lista a telephely által felküldött szolgáltatásokból (1.5.10-es telephelytől);
+    // a vezérlés (indít/leállít/újraindít) admin jog (ROLE>=2), a feladat a telephelyen át jut el az agenthez.
+    async function mcLoadSvc(){const m=curM;if(!m)return;
+      const d=await api('machine-services',{method:'POST',body:JSON.stringify({siteId:m.sid,agentIds:[m.aid]})});
+      if(curM===m){m._svc=d||{ok:false};mcDraw();}}
+    function hubSvcHtml(d){
+      if(!d||!d.ok)return `<div class="empty">${esc((d&&d.error)||'Nem sikerült')}</div>`;
+      if(!d.reported)return '<div class="empty">A telephely még nem küldte fel ennek a gépnek a szolgáltatás-listáját (1.5.10-től, a következő betárcsázáskor).</div>';
+      const admin=window.ROLE>=2, list=d.services||[];
+      const rows=list.map(s=>{
+        const dot=s.running?'<span class="badge ok">fut</span>':'<span class="badge">leállt</span>';
+        const ctl=admin?`<span style="display:flex;gap:4px;justify-content:flex-end">
+          <button class="btn small" ${s.running?'disabled':''} onclick="svcDoHub('${esc(s.name)}','servicestart')">Indít</button>
+          <button class="btn small" ${s.running?'':'disabled'} onclick="svcDoHub('${esc(s.name)}','servicestop')">Leállít</button>
+          <button class="btn small primary" onclick="svcDoHub('${esc(s.name)}','servicerestart')">Újraindít</button></span>`:'';
+        return `<tr class="svcrow" data-n="${esc((s.name+' '+(s.displayName||'')).toLowerCase())}">
+          <td>${esc(s.displayName||s.name)} ${dot} ${s.auto?'<span class="badge" style="font-size:10px">auto</span>':''}<div class="ver-old mono" style="font-size:11px">${esc(s.name)}</div></td>
+          <td style="text-align:right">${ctl}</td></tr>`;}).join('');
+      return `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${list.length} szolgáltatás · a művelet a telephely következő betárcsázásakor, majd a gép jelentkezésekor fut le.${admin?'':' A vezérléshez admin jog kell.'}</div>
+        <input id="svcF" class="search" style="width:320px;max-width:100%;margin-bottom:10px" placeholder="Szűrés…" oninput="fltRows('svcF','svcrow')">
+        <table class="upd-table"><tr><th>Szolgáltatás</th><th></th></tr>${rows}</table>`;}
+    async function svcDoHub(name,kind){
+      const verb=kind==='servicestart'?'indítása':kind==='servicestop'?'leállítása':'újraindítása';
+      if(curM)curM._svc=null;   // a következő megnyitáskor frissüljön a lista
+      await task(kind,name,kind==='servicestart'?null:`A(z) „${name}” szolgáltatás ${verb} – biztos?`);}
     // ---- Frissítés a Központból: a telephely szervere a Központ verziójára, az agentek a szerverbe épített agentre.
     function vNewer(a,b){const p=x=>String(x||'0').split('.').map(n=>parseInt(n)||0),x=p(a),y=p(b);
       for(let i=0;i<4;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0);}return false;}

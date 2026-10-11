@@ -719,6 +719,8 @@ static class HubProgram
                 // a feladat a telephely következő betárcsázásakor megy le, onnan az agenthez.
                 var r = ProtocolJson.Deserialize<HubTaskReq>(body);
                 if (r is null || !CanTouch(user, r.SiteId)) { ctx.Response.StatusCode = 403; await Json(ctx, new { ok = false, error = "nincs jogod ehhez a telephelyhez" }); return; }
+                if (r.Kind is "servicestart" or "servicestop" or "servicerestart" && role < Role.Admin)
+                { ctx.Response.StatusCode = 403; await Json(ctx, new { ok = false, error = "Szolgáltatás kezeléséhez admin jog kell." }); return; }
                 var site = _store.Sites.FirstOrDefault(s => s.SiteId == r.SiteId && !s.Revoked);
                 var targets = site?.LastSummary?.Agents.Where(a => !a.Revoked && (r.AgentIds?.Contains(a.AgentId) ?? false)).ToList() ?? new();
                 if (targets.Count == 0) { await Json(ctx, new { ok = false, error = "Nincs célgép." }); return; }
@@ -755,6 +757,26 @@ static class HubProgram
                 await Json(ctx, new { ok = true, machines = targets.Count, tasks = work.Count });
                 return;
             }
+            // ---- 1.5.10: egy gép szolgáltatásai a Központ szolgáltatás-kezelő paneljéhez (a telephely felküldte)
+            case "/web/api/machine-services":
+                if (NeedKezelo()) { await Json(ctx, new { ok = false, error = "kezelői jog kell" }); return; }
+            {
+                var r = ProtocolJson.Deserialize<HubTaskReq>(body);
+                var aid = r?.AgentIds?.FirstOrDefault();
+                if (r is null || aid is null || !CanTouch(user, r.SiteId)) { ctx.Response.StatusCode = 403; await Json(ctx, new { ok = false, error = "nincs jogod ehhez a telephelyhez" }); return; }
+                var ag = _store.Sites.FirstOrDefault(s => s.SiteId == r.SiteId && !s.Revoked)?.LastSummary?.Agents.FirstOrDefault(a => a.AgentId == aid);
+                if (ag is null) { await Json(ctx, new { ok = false, error = "Nincs ilyen gép." }); return; }
+                await Json(ctx, new
+                {
+                    ok = true,
+                    reported = ag.ServiceList is not null,
+                    services = (ag.ServiceList ?? new List<ServiceEntry>())
+                        .OrderBy(s => s.DisplayName.Length > 0 ? s.DisplayName : s.Name, StringComparer.OrdinalIgnoreCase)
+                        .Select(s => new { name = s.Name, displayName = s.DisplayName, running = s.Running, auto = s.Auto })
+                });
+                return;
+            }
+
             // ---- új agent a Központból (a beléptetőt a telephely készíti, a következő betárcsázáskor)
             // ---- frissítés a Központból: telephely szervere (a Központ saját exéjére) és az agentek
             case "/web/api/site-update":
@@ -1749,6 +1771,13 @@ static class HubProgram
             case "reboot":
                 kind = AgentTaskKind.Reboot;
                 target = (int.TryParse(target, out var d) ? Math.Clamp(d, 0, 3600) : 300).ToString(); return null;
+            case "servicestart":   // 1.5.10: Windows-szolgáltatás kezelése (a végpont külön admin-jogot is ellenőriz)
+            case "servicestop":
+            case "servicerestart":
+                if (!ServiceName.IsValid(target)) return "Érvénytelen szolgáltatásnév.";
+                kind = kindName == "servicestart" ? AgentTaskKind.ServiceStart
+                     : kindName == "servicestop" ? AgentTaskKind.ServiceStop : AgentTaskKind.ServiceRestart;
+                return null;
             default: return "Ismeretlen művelet.";
         }
     }

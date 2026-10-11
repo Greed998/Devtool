@@ -481,6 +481,10 @@ public sealed class HubStore
                     if (site.LastSummary is { } prevSum2)
                         foreach (var a in body.Summary.Agents.Where(x => x.Components is null))
                             a.Components = prevSum2.Agents.FirstOrDefault(p => p.AgentId == a.AgentId)?.Components;
+                    // 1.5.10: a szolgáltatás-lista is csak változáskor jön (null = a régi marad).
+                    if (site.LastSummary is { } prevSum3)
+                        foreach (var a in body.Summary.Agents.Where(x => x.ServiceList is null))
+                            a.ServiceList = prevSum3.Agents.FirstOrDefault(p => p.AgentId == a.AgentId)?.ServiceList;
                     TrackUpdates(site, body.Summary);
                     site.LastSummary = body.Summary;
                     site.SummarySiteUtc = DateTime.TryParse(body.Timestamp, System.Globalization.CultureInfo.InvariantCulture,
