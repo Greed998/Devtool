@@ -488,6 +488,8 @@ leküldhető a szerverekre; a Tárolás beállítás nem volt menthető.
   kiváltott helyi szabályt nem értékeli (`_superseded`, csak bekapcsolt központi szabálynál), az aktív állapota törlődik.
 - **Tárolás:** a jelenlegi hely nem esik az „idegen, nem üres” vizsgálat alá; a `metrics-napok` / `metrics-telephelyek`
   almappa a miénk; a három hely nem lehet azonos mappa; a `DataBackup` takarítása csak az `ÉÉÉÉHHNN-ÓÓPPMM-` mappákat törli.
+- **Napi mérési fájl feltöltése:** sikertelen (elutasított / megszakadt) feltöltés után az adott nap 1 óráig nem megy újra
+  (`HubClient._fileRetryAt`) – eddig egy tartós elutasítás minden betárcsázáskor a teljes fájlt újraküldte.
 - Teszt: `unit/Alerts` (felküldés, kiváltás, nincs dupla riasztás, kikapcsolás/törlés után a helyi fut), `unit/Storage`.
 
 ### Fleet 1.5.12 · Agent 1.5.12 · DevToolbox 1.5.12 – webfelület telefonon és tableten (2026-10-11)

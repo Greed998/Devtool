@@ -26,6 +26,11 @@ JAVÍTVA – Beállítások → Tárolás:
   - A mentések takarítása csak a saját mentés-mappáit törli (eddig a megadott mappa bármely
     almappáját a legújabb 10 után).
 
+JAVÍTVA – mérési napi fájlok feltöltése a Központba:
+  - Ha a Központ egy napi fájlt nem fogadott el, a telephely minden betárcsázáskor újra
+    felküldte a teljes (akár több száz MB-os) fájlt. Mostantól ugyanazt a napot 1 óráig nem
+    küldi újra.
+
 ============================================================
 
 DevToolbox Fleet 1.5.12 – telefonon és tableten is használható webfelület

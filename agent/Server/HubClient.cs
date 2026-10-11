@@ -560,10 +560,15 @@ public sealed class HubClient
     /// 1.5.8: lezárt napi mérési fájlok feltöltése (körönként legfeljebb 3): gzip, a telephely kulcsával aláírt fejléc
     /// (nap, SHA-256, méret, nonce), és csak a Központ ALÁÍRT, ehhez a kéréshez és lenyomathoz kötött nyugtája után törlünk.
     /// </summary>
+    private readonly Dictionary<string, DateTime> _fileRetryAt = new();
+
     private async Task UploadMetricFilesAsync(string baseUrl, ServerConfig config, Crypto.KeyPair keys, CancellationToken token)
     {
-        foreach (var f in Metrics!.DueFiles(config.EffectiveKeepDays()).Take(3))
+        foreach (var f in Metrics!.DueFiles(config.EffectiveKeepDays()).Where(x => !(_fileRetryAt.TryGetValue(x.Day, out var at) && at > DateTime.UtcNow)).Take(3))
         {
+            // 1.5.13: sikertelen feltöltés után ezt a napot 1 óráig nem küldjük újra – egy tartós elutasítás (pl. a Központ
+            // nem fogadja) eddig minden betárcsázáskor újra felküldte a teljes, akár több száz MB-os fájlt.
+            _fileRetryAt[f.Day] = DateTime.UtcNow.AddHours(1);
             // Csak ha az 5 perces átlagai már fent vannak (a mutató túl van a napon): különben a Központ a fájl után még
             // megkapná ugyanannak a napnak az átlagait is – két példány lenne.
             if (f.Start + 86400 > config.HubMetricsFromTs) break;
@@ -590,6 +595,7 @@ public sealed class HubClient
                 if (rc is null || rc.RequestNonce != hdr.Nonce || rc.Day != f.Day || rc.Sha256 != sha) { LastError = $"Mérési fájl ({f.Day}): a nyugta nem ehhez a feltöltéshez tartozik – a fájl marad."; return; }
                 if (!rc.Ok) { LastError = $"Mérési fájl ({f.Day}): {rc.Message}"; return; }
                 Metrics.DeleteDayFile(f.Day);
+                _fileRetryAt.Remove(f.Day);
                 SrvLog.Info($"Mérési adatok ({f.Day}) a Központban – a helyi napi fájl törölve ({hdr.Size / 1024} KB tömörítve).");
             }
             finally { try { File.Delete(gz); } catch { } }
