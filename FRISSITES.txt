@@ -1,3 +1,32 @@
+DevToolbox Fleet 1.5.11 – biztonsági javítások, SNMP-megerősítés, optimalizálás
+==============================================================================
+Fleet 1.5.11 · Agent 1.5.11 (DevToolbox 1.5.9 változatlan)
+
+FRISSÍTÉS: Fleet.exe a Központra, majd a telephelyekre; az agentek a szerverről maguktól
+  frissülnek. Beállítást nem kell módosítani.
+
+JAVÍTVA (biztonság – kódszintű audit alapján):
+  - Webfelület (szerver és Központ): egy aposztrófot tartalmazó név (pl. Windows-szolgáltatás
+    neve, felhasználónév) a gombok mögötti parancsból „kitörhetett” – ezzel kártékony kód
+    futhatott volna a felületet néző admin böngészőjében. Javítva.
+  - Programtelepítés / -eltávolítás: a program-azonosító nem végződhet „\”-re (ezzel a winget
+    parancsába további kapcsolók csempészhetők lettek volna). Az ARP-azonosítók (ARP\Machine\…)
+    továbbra is rendben működnek.
+  - SNMP-fogadás:
+      · a túl nagy (32 bitesnél hosszabb) TimeTicks értéktől eddig az egész trap elveszett –
+        most megérkezik, a hibás érték nyersen látszik;
+      · hamisított feladócímekkel a forrásonkénti terheléskorlát nullázható volt – most van
+        globális korlát is (2000 csomag / 10 mp), és a forrás-tábla nem ürül ki;
+      · a visszajátszás- és a kulcs-gyorsítótár mérete korlátos, hitelesítés nélkül nem
+        tölthető / üríthető;
+      · IPv6 nélküli (letiltott) gépen is elindul (csak IPv4-en figyel).
+
+JAVULT:
+  - Betárcsázás: a programlista / driverek / szolgáltatások változását a telephely most
+    ideiglenes nagy szövegek építése nélkül figyeli (kevesebb memória-szemét).
+
+============================================================
+
 DevToolbox Fleet 1.5.10 – szolgáltatás-kezelő felület, újraindítás-javítás
 ==========================================================================
 Fleet 1.5.10 · Agent 1.5.10 (DevToolbox 1.5.9 változatlan)

@@ -15,13 +15,14 @@ alacsony/hardening tétel. Adatvesztést, auth-megkerülést, SQL- vagy parancs-
 |---|---|---|---|
 | F1 | Tárolt XSS: `esc()` nem escape-eli a `'`-t (onclick JS-sztring) | **Közepes** | ✅ **Javítva** (jesc) |
 | F2 | winget argumentum: záró `\` kitörhet az idézőjelből | Alacsony | ✅ **Javítva** |
-| F3 | Session-cookie `Secure` flag hiányzik | Alacsony | Ajánlás (környezetfüggő) |
+| F3 | Session-cookie `Secure` flag hiányzik | Alacsony | ✅ NPM-ben beállítva (Központ) |
 | F4 | ~~`DeleteDayFile(day)` path-traversal~~ | — | Nem találat (már `TryDay`-védett) |
-| O1 | Változás-detektálás nagy string + GetHashCode allokáció | Info | Optimalizálási javaslat |
+| O1 | Változás-detektálás nagy string + GetHashCode allokáció | Info | ✅ **Javítva (1.5.11)** |
+| S1 | SNMP: TimeTicks-túlcsordulás, rate-limit megkerülés, cache-korlátok | Közepes | ✅ **Javítva (1.5.11)** |
 | O2 | MetricStore DB-zár hosszú karbantartás alatt | Info | Elfogadható |
 
-**Javítva ebben a körben:** F1 (jesc a JS-sztringes helyeken, mindkét felületen + `esc()` escapeli a `'`-t),
-F2 (a `WingetId.IsValid` tiltja a backslash-t).
+**Javítva:** F1 (jesc a JS-sztringes helyeken, mindkét felületen + `esc()` escapeli a `'`-t), F2 (a `WingetId.IsValid`
+tiltja a záró backslash-t), O1 (allokáció-mentes hash), S1 (SNMP-megerősítés, lásd lent). Mind az 1.5.11-ben.
 
 ---
 
@@ -137,10 +138,20 @@ külön, csak-olvasó kapcsolaton mennek).
 
 ---
 
-## Terület, amit érdemes külön megnézni (nem auditáltam soronként)
-- **SNMP-trap fogadó** (`SnmpReceiver.cs`): titkosítatlan hálózati bemenetet parse-ol (v1/v2c/v3). A
-  kriptográfia szabványos, de a bináris parsert érdemes fuzzolni (malformált trap-ekkel) egy külön körben.
+## S1 — SNMP-fogadó (1.5.11: átnézve, fuzzolva, javítva)
+A BER-olvasó eleve szigorú volt (határozott hossz, max. 3 hosszbájt, csomaghatár-ellenőrzés, OID-túlcsordulás-védelem,
+max. 200 varbind, minden kivétel elkapva). Az átnézés és **3,6 millió fuzzolt csomag** (csonkolás, bitfordítás,
+hosszmező-rontás, beszúrás, véletlen bájtok; `tests/unit/SnmpHardening`, `SNMP_FUZZ=N`) alapján javítva:
+- **TimeTicks-túlcsordulás** (a fuzzing találta, ~6% a mintán): a 32 bitesnél nagyobb érték `OverflowException`-t
+  dobott, és az egész trap elveszett. Most a hibás érték nyersen látszik.
+- **Terheléskorlát megkerülése** (közepes): a forrás-tábla 5000 forrás fölött teljesen törlődött; hamisított UDP-
+  forrásokkal (a megengedett belső tartományok nagyok) a forrásonkénti korlát nullázható volt. Új globális korlát
+  (2000 csomag / 10 mp), a tábla nem ürül ki.
+- **Visszajátszás-tábla**: korlátos méret, legfeljebb 10 mp-enként takarít (eddig minden csomagnál O(n), korlátlan).
+- **Kulcs-gyorsítótár**: csak sikeres HMAC után tárol (eddig hitelesítés nélkül kiüríthető volt).
+- **Megjelenítés**: hexa csak az első 249 bájtból. **IPv4-tartalék** IPv6 nélküli gépen; socket-szivárgás javítva.
+Eredmény: 0 generikus (ellenőrizetlen) parser-hiba, lineáris futásidő (~220 000 csomag/mp).
 
 ---
 
-*Készült a 1.5.10 kódbázisra. A javításokat kérésre elvégzem – az F1 (XSS) a legfontosabb.*
+*Készült a 1.5.10 kódbázisra; a javítások az 1.5.11-ben jelentek meg.*

@@ -12,9 +12,9 @@ Minden kiadásnál frissül. Verziózás: kisebb frissítésnél **csak az utols
 | Program | Verzió | Szerep | Hol fut |
 |---|---|---|---|
 | **DevToolbox** (asztali) | 1.5.9 | Rendszergazdai eszköztár, Flotta fül | A rendszergazda gépén |
-| **DevToolboxAgent** | 1.5.10 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
-| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.10 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
-| **Fleet** – Központ szerep (FleetHub) | 1.5.10 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
+| **DevToolboxAgent** | 1.5.11 | Felügyeleti agent | Minden felügyelt gépen (szolgáltatás) |
+| **Fleet** – telephelyi szerver szerep (FleetServer) | 1.5.11 | Telephelyi szerver + webfelület | Az ügyfél belső szerverén (szolgáltatás) |
+| **Fleet** – Központ szerep (FleetHub) | 1.5.11 | Központi felügyelet, telephelyek betárcsázása | Poltoli oldalon, `fleet.poltoli.hu` mögött |
 
 Mind önálló, .NET 10-es, 64 bites, egyfájlos exe – a gépre .NET nem kell. **1.3.0-tól a FleetServer és a FleetHub
 egyetlen exe (`Fleet.exe`)**, benne a beépített agenttel; a szerepet telepítéskor választod (szerver / Központ /
@@ -471,6 +471,24 @@ viselkedése http.sys alatt. Ellenőrzés: `DevToolboxAgent.exe diag`, `FleetHub
 ---
 
 ## 5. Verziótörténet
+
+### Fleet 1.5.11 · Agent 1.5.11 – biztonsági audit javításai, SNMP-megerősítés, optimalizálás (2026-10-11)
+A felhasználó kérése: kódszintű biztonsági audit („penetration test" szemlélettel) és optimalizálás; a javítások. Részletek:
+`BIZTONSAGI-AUDIT-1.5.10.md`.
+- **XSS (közepes).** Az `esc()` nem kódolta az aposztrófot, és a felület az `onclick="fn('${esc(név)}')"` mintában
+  egyszeres idézőjeles JS-sztringbe tette a neveket (szolgáltatásnév, felhasználónév) – egy `'` kitörhetett. Új `jesc()`
+  (JS-escape + HTML-escape) a `WebUi.cs`-ben és a `HubWebUi.cs`-ben, mind a 20 ilyen hely átállítva; az `esc()` most az
+  aposztrófot is kódolja.
+- **winget-argumentum (alacsony).** A `WingetId.IsValid` tiltja a záró backslash-t (`"id"` → eszkébelt idézőjel →
+  kapcsoló-injekció). A belső backslash marad: az ARP-azonosítók tartalmazzák (ezt egy meglévő teszt jelezte).
+- **SNMP-megerősítés (fuzzing + átnézés).** TimeTicks-túlcsordulás miatt elveszett trapek (fuzzing találta);
+  globális terheléskorlát és a forrás-tábla nem ürül ki (hamisított forrásokkal nullázható volt); korlátos,
+  ritkán takarított visszajátszás-tábla; kulcs-gyorsítótár csak sikeres HMAC után; hexa-megjelenítés vágása;
+  IPv4-tartalék IPv6 nélküli gépen, socket-szivárgás javítva. Új teszt: `tests/unit/SnmpHardening` (3,6 millió
+  fuzzolt csomag: 0 generikus hiba).
+- **Optimalizálás (O1).** A `HubClient` változás-detektálása `System.HashCode`-dal, ideiglenes nagy stringek nélkül.
+- **Teszt-harness.** A `HubClient`-et fordító e2e tesztekből hiányzott a `WireGuard.cs` / `SiteWg.cs` – pótolva.
+- A session-cookie `Secure` flagje a Központ előtt az NPM-ben van beállítva (a felhasználó jelezte) – a kódban nem kell.
 
 ### Fleet 1.5.10 · Agent 1.5.10 – szolgáltatás-kezelő felület, újraindítás-javítás (2026-10-11)
 A felhasználó kérése és döntései.
